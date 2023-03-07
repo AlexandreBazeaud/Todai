@@ -1,0 +1,107 @@
+@using BlazorWebAssymblyWeb3.Client.Services
+
+<style>
+    p {
+        opacity: 0.7;
+        font-weight: 400;
+        font-size: 0.9rem;
+    }
+
+    .a-hide {
+        margin-bottom: -100px;
+         margin-right: -30px;
+        opacity: 0;
+
+    }
+
+    .a-show {
+        margin-bottom: 0px;
+        margin-right: 0px;
+        opacity: 1;
+
+    }
+</style>
+
+<div class="alert-message-container @(Hidden ? "a-hide" : "a-show") ">
+
+    @if (State == AlertMessageService.States.Success)
+    {
+        <div class="alert-message success-bg row">
+            <div class="row--" style="width: 70px;">
+                <img height="28px" src="media/success.svg" alt="">
+            </div>
+            <div class="column">
+                <div class="green" style="font-weight: 700;"> Success!</div>
+                <p>@Message</p>
+            </div>
+            <img class="alert-close cursor" height="15px" src="media/close.svg" alt="close" style="opacity:0.7">
+
+        </div>
+    }
+    else if (State == AlertMessageService.States.Error)
+    {
+        <div class="alert-message error-bg row">
+            <div class="row--" style="width: 70px;">
+                <img height="28px" src="media/warning.svg" alt="">
+            </div>
+            <div class="column">
+                <div class="red" style="font-weight: 700;"> Error!</div>
+                <p>@Message</p>
+            </div>
+            <img class="alert-close cursor" height="15px" src="media/close.svg" alt="close" style="opacity:0.7">
+
+        </div>
+    }
+    else if (State == AlertMessageService.States.Info)
+    {
+        <div class="alert-message info-bg row">
+            <div class="row--" style="width: 70px;">
+                <img height="28px" src="media/info.svg" alt="">
+            </div>
+            <div class="column">
+                <div class="blue" style="font-weight: 700;"> Info!</div>
+                <p> @Message</p>
+            </div>
+            <img class="alert-close cursor" height="15px" src="media/close.svg" alt="close" style="opacity:0.7">
+        </div>
+    }
+    else if (State == AlertMessageService.States.Event)
+    {
+        <div class="alert-message-small row xp-bg">
+            <p>Create a swap offer</p>
+            <div class="row gap">
+                <div class="purple" style="font-weight: 700;">+ 300</div>
+                <img src="media/xp.svg" alt="">
+            </div>
+        </div>
+    }
+</div>
+
+
+@code {
+
+
+    [Parameter]
+    public AlertMessageService.States State { get; set; }
+
+    [Parameter]
+    public string Message { get; set; } = "";
+
+    [Parameter]
+    public bool Hidden { get; set; } = true;
+
+    public void SetState(AlertMessageService.States pState, string pMessage)
+    {
+        State = pState;
+        Message = pMessage;
+        Hidden = false;
+        StateHasChanged();
+    }
+
+    public void Hide()
+    {
+        Hidden = true;
+        StateHasChanged();
+    }
+
+}

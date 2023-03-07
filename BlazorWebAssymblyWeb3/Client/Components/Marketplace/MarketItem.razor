@@ -1,0 +1,288 @@
+﻿@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Server;
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using MetaMask.Blazor
+@using BlazorWebAssymblyWeb3.Client.Components.Marketplace
+@inject IJSRuntime _jsRuntime;
+@inject StateContainer _stateContainer;
+@inject NavigationManager _navManager;
+@inject AlertMessageService _alertMessageService;
+@inject MetaMaskService _metaMaskService;
+@inject Helper _helper;
+@inject HttpClient _http;
+
+<style>
+    h2 {
+        font-size: 17px !important;
+    }
+
+    .market-button-edit {
+        height: 26px !important;
+        font-size: 16px !important;
+    @* border: 1px solid rgba(255, 255, 255, 0.2); *@ width: 70px !important;
+        font-size: 14px !important;
+        padding-bottom: 1px;
+    }
+
+    .button-edit {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+</style>
+<div class="market-item column">
+    <div class="market-item-header row-sb" style="margin-bottom: 3px;">
+        @if (NFT.Rank != 0)
+        {
+            <div class="row">
+                <p style="font-size: 0.7rem;margin-right:3px;">RARITY</p>
+                <h4>#@NFT.Rank</h4>
+            </div>
+        }
+        <div class="row gap">
+            @if (IsFavorited != null)
+            {
+                <div class="tooltip-c cursor" @onclick="Favorite">
+                    <img height="18" src="@(IsFavorited.Value ? "media/favorite_icon.svg":"media/notfavorite_icon.svg")" alt="favorite nft">
+                    <div class="tooltip">
+                        Favorite
+                    </div>
+                </div>
+            }
+            @* <img height="20" src="media/more.svg" alt="more" > *@
+        </div>
+    </div>
+    <div class="market-item-viewer" @onclick="toAsset">
+        <img src="@($"https://todai.world/images/{NFT.ContractAddress}/{NFT.TokenId}")" alt="">
+    </div>
+    <div class="market-item-footer column" style="gap:6px">
+        <div class="row-sb">
+            <div class="column" style="gap:2px">
+                <div class="row" style="gap: 2px;">
+                    <p class="market-item-title">@NFT.Data?.name</p>
+                </div>
+            </div>
+        </div>
+        <div class="row-sb row-r gap">
+            @if (AssetListed != null)
+            {
+                <div class="row " style="font-size: 16px;gap:5px">
+                    <div class="tooltip-c">
+                        <img height="19" src="media/ftm.svg" style="margin-bottom:-3px">
+                        <div class="tooltip">
+                            FTM (Fantom)
+                        </div>
+                    </div>
+                    <div class="ftm-gradient"> @AssetListed?.Price</div>
+                </div>
+
+            }
+            else
+            {
+                <p style="opacity: 0.2;font-style: italic;"> </p>
+            }
+            <div class="market-item-btn row gap-c">
+
+                @if (AssetListed == null && !(MyWallet ?? false))
+                {
+                    <button class="button-edit market-button-edit" style="border:none; width:100px !important" @onclick=" MakeOffer">Make Offer</button>
+                }
+                @if (AssetListed != null)
+                {
+                    @if (!MyWallet ?? false)
+                    {
+                        if (AssetListed.IsPaintswap || AssetListed.IsNftKey)
+                        {
+                            <div class="row gap">
+                                @if (AssetListed.IsPaintswap)
+                                {
+                                    <img height="20" src="media/paintswap_icon.svg" style="margin-top:2px" alt="">
+                                }
+                                else
+                                {
+                                    <img height="20" src="media/nftkey_logo.svg" style="margin-top:2px" alt="">
+                                }
+
+                                <button class="button-edit market-button-edit row-- gap--" @onclick="   Checkout"> Buy</button>
+                            </div>
+                        }
+                        else
+                        {
+                            <button class="button-edit market-button-edit" @onclick="Checkout">Buy</button>
+                        }
+
+                    }
+                    @if (AssetListed.seaportOrder != null && AssetListed.seaportOrder?.parameters?.offerer == _stateContainer.CurrentConnectedAddress || (MyWallet ?? false))
+                    {
+                        <button class="button-edit market-button-edit" @onclick="  CancelOrder">Cancel</button>
+                    }
+                }
+                else
+                {
+
+                    if (MyWallet ?? false)
+                    {
+                        <button class="button-edit market-button-edit" @onclick="  ListNft">Sell</button>
+                    }
+                }
+
+            </div>
+
+
+
+        </div>
+        @* @if(MyWallet.HasValue && !MyWallet.Value)
+        {
+        <button class="button-edit market-button-edit" style="border: none;" @onclick="MakeOffer">Offer</button>
+        }  *@
+        <div class="row gap-c" style="padding-top:12px ; margin-top:6px; border-top:1px solid rgba(255, 255, 255, 0.1)">
+
+
+            @if (Offers != null && Offers.Count > 0)
+            {
+                <p style="font-family:'Roboto';font-size: 11px;gap:2px"> Best Offer </p>
+                <img height="12" src="media/wftm.svg" alt="">
+                <p style="font-family:'Roboto';font-size: 11px;gap:2px"> @Offers.Max(x => x.PriceInt) </p>
+
+            }
+            else
+            {
+                <p style="font-size: 11px;gap:2px;opacity: 0.2;font-style: italic;"> no activity yet</p>
+            }
+
+            @* // PRIX DU LAST SOLD // *@
+            @* <p style="font-family:'Roboto';font-size: 11px;gap:2px"> Last Price </p>
+            <img height="12" src="media/wftm.svg" alt="">
+            <p style="font-family:'Roboto';font-size: 11px;gap:2px"> 1329 </p> *@
+        </div>
+    </div>
+
+
+</div>
+@if (buying)
+{
+    <CheckoutOffer AssetListed="AssetListed" NFT="NFT" OnClose="CheckoutClose" />
+}
+@if (listing)
+{
+    <ListingAsset NFT="NFT" Close="CloseListing" />
+}
+@if (makeOffer)
+{
+    <MakeOffer NFT="NFT" AssetListed="AssetListed" Close="CloseMakeOffer" />
+}
+@code {
+    [Parameter]
+    public AssetListing? AssetListed { get; set; }
+
+    [Parameter]
+    public Yokai NFT { get; set; }
+
+    [Parameter]
+    public bool IsCurrentConnectedProfile { get; set; }
+
+    [Parameter]
+    public bool? IsFavorited { get; set; }
+
+    [Parameter]
+    public int? CollectionId { get; set; }
+
+    [Parameter]
+    public bool? MyWallet { get; set; }
+
+    [Parameter]
+    public Nft? NftInfos { get; set; }
+
+    [Parameter]
+    public List<OfferListed>? Offers { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnBuy { get; set; }
+    private bool IsOnBuySet => OnBuy.HasDelegate;
+
+    private void toAsset()
+    {
+        _navManager.NavigateTo($"{_navManager.BaseUri}asset/{NFT.ContractAddress}/{NFT.TokenId}");
+    }
+
+    private async Task Favorite()
+    {
+        var address = await _metaMaskService.GetSelectedAddress();
+
+        var guid = await _http.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={address}");
+
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+
+        if (!transaction.IsSuccess) return;
+
+        var favorite = await _http.GetStringAsync($"Yokai/FavoriteAsset?pCollectionId={CollectionId}&pTokenId={NFT.TokenId}&pSignatureHash={transaction.Hash}&pAddress={address}");
+        IsFavorited = !IsFavorited;
+        StateHasChanged();
+    }
+
+    private bool buying;
+    private bool runningTransaction;
+    public async Task Checkout()
+    {
+        if (AssetListed is null) return;
+
+        if (AssetListed.IsPaintswap || AssetListed.IsNftKey)
+            await _jsRuntime.InvokeAsync<object>("open", AssetListed.AssetUrl, "_blank");
+        else
+            buying = true;
+    }
+
+    public async Task CheckoutClose(bool isBought)
+    {
+        buying = false;
+        if (IsOnBuySet && isBought)
+            AssetListed = null;
+        //await OnBuy.InvokeAsync();
+        //StateHasChanged();
+    }
+
+    private bool listing = false;
+    private void ListNft() => listing = true;
+    private void CloseListing(AssetListing? possibleListing) 
+    {
+        if (possibleListing != null)
+            AssetListed = possibleListing;
+        listing = false;
+    }
+
+    private bool makeOffer = false;
+    private void MakeOffer()
+    {
+        if (string.IsNullOrWhiteSpace(_stateContainer.CurrentConnectedAddress))
+        {
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Info, "You need to be connected");
+            return;
+        }
+        makeOffer = true;
+    }
+
+    private void CloseMakeOffer() => makeOffer = false;
+
+    private async Task CancelOrder()
+    {
+        var reference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.cancelOrder", AssetListed.OrderJson, reference);
+        AssetListed = null;
+    }
+
+    [JSInvokable]
+    public async Task WaitingTransaction() => runningTransaction = true;
+
+    [JSInvokable]
+    public async Task TransactionDone(bool isSuccess, string pError = "")
+    {
+        runningTransaction = false;
+        if (isSuccess)
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Listing has been canceled");
+        else
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+    }
+}

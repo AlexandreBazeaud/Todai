@@ -1,0 +1,258 @@
+@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Server
+@using BlazorWebAssymblyWeb3.Shared
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@using BlazorWebAssymblyWeb3.Client.Services
+@using Newtonsoft.Json
+@using static BlazorWebAssymblyWeb3.Client.Components.Marketplace.Wallet
+@inject IJSRuntime _jsRuntime;
+@inject HttpClient _http;
+
+<div class="modal market-orders column gap--">
+    <h2>Swap Offer</h2>
+    <div class="token-balance row-sb" style="width: 100%;">
+        <div class="row gap">
+            <img height="35px" src="@TradedNft?.Data?.image" alt="">
+            <div class="column" style="margin-top: -5px;">
+                <div class="row" style="gap:2px">@TradedNft?.Data?.name </div>
+                <p>@CollectionName</p>
+            </div>
+        </div>
+        @* <div class="column" style="text-align: right;"> *@
+        @*     <div>140 FTM</div> *@
+        @*     <p style="text-align: right;">Asset Floor Price</p> *@
+        @* </div>  *@
+    </div>
+    <img height="20px" src="media/swap_2.svg" alt="">
+    @if (nftChosen == null)
+    {
+        <div class="token-balance balance-hover row-sb" style="width: 100%;" onclick="@showWallet">
+            <div class="row gap">
+                <img height="35px" src="media/profile_default.png" alt="">
+            </div>
+            <div class="column" style="text-align: right;">
+                Select your Asset
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="token-balance balance-hover row-sb" style="width: 100%;" onclick="@showWallet">
+            <div class="row gap">
+                <img height="35px" src="@nftChosen.Data.image" alt="">
+                <div class="column" style="margin-top: -5px;">
+                    <div class="row" style="gap:2px">@nftChosen.Data.name </div>
+                    <p>@collectionChosen?.Name</p>
+                </div>
+            </div>
+        </div>
+    }
+    @* <div class="token-balance row-sb" style="width: 100%;">
+        <div class="row gap">
+            <img height="35px" src="media/home_yokai.svg" alt="">
+             <div class="column" style="margin-top: -5px;">
+                 <div class="row" style="gap:2px">Bloody Yokai 319 </div>
+                 <p>YokaiChain</p>
+             </div>
+        </div>
+        <div class="column" style="text-align: right;">
+            <div>140 FTM</div>
+            <p style="text-align: right;">Asset Floor Price</p>
+        </div>
+    </div> *@
+    <div class="column" style="font-size: 1rem;">
+        <div class="row-sb">
+            <p>Service fees</p>
+            <div>1 FTM</div>
+        </div>
+        <div class="row-sb">
+            <p>Expiration</p>
+            <div>in 30 days</div>
+        </div>
+    </div>
+    <span></span>
+    <div class="column--">
+        @if (isApproved)
+        {
+            @if (!isLoading)
+            {
+                <button class="main-button" onclick="@CreateOffer" disabled="@isLoading">Create Offer</button>
+            
+            }
+            else
+            {
+                <button class="main-button main-btn-load row gap" disabled="@isLoading" style="padding-right: 26px;">
+                    <img height="26" src="media/loader.svg" alt=""> Creating Offer
+                </button>
+            }
+        }
+        else
+        {
+            @if (!isLoading)
+            {
+                <button class="main-button @(nftChosen is null ? "main-btn-load" : "")" onclick="@Approve" disabled="@(nftChosen is null)">Approve Asset</button>
+            }
+            else
+            {
+                <button class="main-button main-btn-load row gap" disabled="@isLoading" style="padding-right: 26px;">
+                    <img height="26" src="media/loader.svg" alt=""> Approve
+                </button>
+            }
+        }
+    </div>
+</div>
+<div class="modal-bg" @onclick="confirmClose"></div>
+@if (walletShown)
+{
+    <Wallet UserAddress="@UserAddress" IsCurrentConnectedProfile="true" OnNftChoice="@NftChoice" />
+}
+@if (confirming)
+{
+    <Confirmation Display="confirming" Confirm="exitConfirm" Stay="exitStay" />
+}
+
+
+@code{
+
+    [Parameter]
+    public string UserAddress { get; set; }
+
+    [Parameter]
+    public Yokai TradedNft { get; set; }
+
+    [Parameter]
+    public string CollectionName { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnOfferCreated { get; set; }
+
+    [Inject]
+    public AlertMessageService AlertMessageService { get; set; }
+    
+    private Yokai? nftChosen = null;
+    private Collection? collectionChosen = null;
+    
+    private bool walletShown;
+
+    private void showWallet() => walletShown = true;
+
+    private void confirmClose() => confirming = true;
+
+    private async Task exitConfirm()
+    {
+        confirming = false;
+        await OnOfferCreated.InvokeAsync(false);
+    }
+
+    private async Task exitStay() => confirming = false;
+
+    public async Task NftChoice(WalletChoseData data)
+    {
+        nftChosen = data.Nft;
+        collectionChosen = data.Collection;
+        walletShown = false;
+        isApproved = await _jsRuntime.InvokeAsync<bool>("RecoverLib.IsSwapContractApproved", nftChosen.ContractAddress, nftChosen.TokenId);
+        try
+        {
+            nftChosen.Data.name = await _http.GetStringAsync($"Yokai/GetAssetName?pCollectionId={collectionChosen.Id}&pTokenId={nftChosen.TokenId}");
+        }
+        catch
+        {}
+    }
+
+    private string state;
+    private TransactionStatue.ImageState imageState;
+    private bool isLoading;
+    private bool confirming;
+    private bool isApproved;
+    private DotNetObjectReference<MakeSwapOffer>? _currentComponentReference;
+
+    private async Task CreateOffer()
+    {
+        if (nftChosen == null) return;
+        isLoading = true;
+        state = "Creating offer...";
+        imageState = TransactionStatue.Loading;
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeAsync<List<int>>("RecoverLib.CreateOffer", UserAddress, TradedNft.ContractAddress, nftChosen.ContractAddress, TradedNft.TokenId, nftChosen.TokenId, ((DateTimeOffset)DateTime.UtcNow.AddDays(30)).ToUnixTimeSeconds(), _currentComponentReference);
+    }
+
+    private async Task Approve()
+    {
+        if (nftChosen is null) return;
+        isLoading = true;
+        state = "Approving";
+        imageState = TransactionStatue.Loading;
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.ApproveSwapContractForTokenID", nftChosen.ContractAddress, nftChosen.TokenId, _currentComponentReference);
+    }
+
+    private async Task Revoke()
+    {
+        if (nftChosen is null) return;
+        isLoading = true;
+        state = "Revoking";
+        imageState = TransactionStatue.Loading;
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.RevokeSwapContractForTokenID", nftChosen.ContractAddress, nftChosen.TokenId, _currentComponentReference);
+    }
+
+    [JSInvokable]
+    public async Task Hide(bool pShouldReload)
+    {
+        isLoading = false;
+        StateHasChanged();
+        if (pShouldReload)
+            await OnOfferCreated.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public async Task RevokeResult(bool pIsSuccess)
+    {
+        if (pIsSuccess)
+        {
+            isApproved = !isApproved;
+            state = "Revoked";
+            imageState = TransactionStatue.Done;
+        }
+        else
+        {
+            state = "Revokation failed, try again";
+            imageState = TransactionStatue.Error;
+        }
+
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.HideTransactionState", _currentComponentReference, false);
+    }
+
+    [JSInvokable]
+    public async Task ApproveResult(bool pIsSuccess, string pError = "")
+    {
+        if (pIsSuccess)
+            isApproved = !isApproved;
+        else
+            AlertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+        await InvokeAsync(StateHasChanged);
+        isLoading = false;
+    }
+
+    [JSInvokable]
+    public async Task CreateResult(bool pIsSuccess)
+    {
+        isLoading = false;
+        AlertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Your offer has been successfuly created !");
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.HideTransactionState", _currentComponentReference, pIsSuccess);
+    }
+
+    [JSInvokable]
+    public void WaitingTransaction(string pEventName)
+    {
+        Console.WriteLine(pEventName);
+        if (pEventName.Equals("Cancel") || pEventName.Equals("Create"))
+            return;
+
+        StateHasChanged();
+    }
+}

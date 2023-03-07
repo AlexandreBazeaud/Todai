@@ -1,0 +1,24 @@
+
+<div class="modal statue-notif" >
+    <div class="row gap">
+        <img height="30px" src="@imageState.pImage" alt=""/>
+        @State
+    </div>
+</div>
+
+@code
+{
+    [Parameter]
+    public string State { get; set; }
+
+    public record struct ImageState(string pImage);
+
+    public static ImageState Loading => new("media/loader.svg");
+    public static ImageState Done => new("media/check.svg");
+    public static ImageState Error => new("media/error.svg");
+
+    [Parameter]
+    public ImageState imageState { get; set; } = Loading;
+
+
+}

@@ -1,0 +1,266 @@
+@using BlazorWebAssymblyWeb3.Client.Components.Marketplace
+@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3;
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using BlazorWebAssymblyWeb3.Client.Components.Global;
+@using MetaMask.Blazor
+
+@inject MetaMaskService _metamaskService;
+@inject NavigationManager _navManager;
+@inject Helper _helper;
+@inject HttpClient _httpClient;
+@inject StateContainer _stateContainer;
+@inject AlertMessageService _alertMessageService;
+
+@if (string.IsNullOrWhiteSpace(_stateContainer.CurrentConnectedAddress) || collectionConfig is null)
+{
+    <div>load...</div>
+}
+else
+{
+    <EditForm EditContext="editContext" OnValidSubmit="SubmitCollectionEditAsync">
+<div class="flex" style="gap: 150px;">
+    
+    <div class="column gap-">
+        <h1>Collection Settings</h1>
+        <div class="column gap--">
+            <div class="column" style="gap: 4px;">
+                <p>Name</p>
+                <InputText @bind-Value="collectionEdit.Name" class="search-bar" />
+            </div>
+            <div class="column" style="gap: 4px;">
+                <p>Description</p>
+                <InputTextArea @bind-Value="collectionEdit.Description" class="search-bar" style="height: 150px; resize:vertical;" rows="4" cols="50" />
+            </div>
+            <h1>Links</h1>
+            <div class="column" style="gap: 4px;">
+                <p>Discord Server</p>
+                <InputText @bind-Value="collectionEdit.Discord" class="search-bar" />
+            </div>
+            <div class="column" style="gap: 4px;">
+                <p>Twitter</p>
+                <InputText @bind-Value="collectionEdit.Twitter" class="search-bar" />
+            </div>
+            <div class="column" style="gap: 4px;">
+                <p>Website</p>
+                <InputText @bind-Value="collectionEdit.Website" class="search-bar" />
+            </div>
+            <h1>Advanced</h1>
+             <div class="column" style="gap: 4px;">
+                <p>Royalty %</p>
+                <InputNumber @bind-Value="collectionEdit.Royalty" class="search-bar" />
+            </div>
+        </div>
+    </div>
+    <div class="column gap-">
+        <div class="column">
+            <p>Profile image</p>
+            <div class="profile-pic">
+                <label class="edit-hover row--" for="profile-img">
+                    <img class="edit-icon" style="height:25px;" src="media/edit_icon.svg" alt="">
+                </label>
+                <img src="https://todai.world/images/@CollectionAddress/ProfilePicture" alt="">
+                <InputFile id="profile-img" OnChange="@UploadFile" style="display: none;"/>
+                @*<   >*@
+            </div>
+        </div>
+        <div class="column">
+            <p>Background image</p>
+            <div class="bg-pic">
+                <label class="edit-hover row--" for="background-img">
+
+                    <img class="edit-icon" style="height:25px;" src="media/edit_icon.svg" alt="">
+
+                </label>
+                <img src="https://todai.world/images/@CollectionAddress/BackgroundPicture" alt="">
+                <InputFile id="background-img" OnChange="@UploadBackgroundFile" style="display: none;"/>
+            </div>
+
+        </div>
+    <button type="submit" class="btn-x watch-btn @(editing?"":"disabled-btn")" style="height: 38px; font-size:1rem;">Save all changes</button>
+
+         <a class="button-edit" style="height: 38px; font-size:1rem; margin-top:-21px" href="/collection/@CollectionAddress" >See Collection</a>
+
+    </div>
+    
+</div>
+</EditForm>
+}
+@code{
+    [Parameter]
+    public string CollectionAddress { get; set; }
+    private EditContext editContext;
+    private BlazorWebAssymblyWeb3.Server.Collection? collectionConfig { get; set; }
+    private CollectionEdit collectionEdit = new();
+    private bool editing;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var isConnected = await _metamaskService.IsSiteConnected();
+        if (!isConnected)
+            _navManager.NavigateTo("/Home");
+
+        var address = await _metamaskService.GetSelectedAddress();
+        editContext = new(collectionEdit);
+        editContext.OnFieldChanged += FormChanged;
+        if(!string.IsNullOrWhiteSpace(CollectionAddress))
+        {
+            CollectionAddress = CollectionAddress.ToLower();
+            await GetCollectionAsync(CollectionAddress);
+        }
+        if(address.ToLower() != collectionConfig!.OwnerAddress!.ToLower())
+            _navManager.NavigateTo("/Home");
+    }
+
+    private async Task GetCollectionAsync(string address)
+    {
+        collectionConfig = await _httpClient.GetFromJsonAsync<BlazorWebAssymblyWeb3.Server.Collection>($"Yokai/GetCollectionConfig?pAddress={CollectionAddress}");
+        if(collectionConfig is null)
+            _navManager.NavigateTo("/Home");
+        collectionEdit = new CollectionEdit
+        {
+            Id = collectionConfig.Id,
+            Name = collectionConfig.Name,
+            Discord = collectionConfig.Discord,
+            Description = collectionConfig.Description,
+            Twitter = collectionConfig.Twitter,
+            Website = collectionConfig.Website,
+        };
+    }
+
+    private void FormChanged(object sender, FieldChangedEventArgs pArg)
+    {
+        editing = true;
+        StateHasChanged();
+    }
+
+    private bool shouldRender = true;
+
+    protected override bool ShouldRender() => shouldRender;
+    private async Task UploadFile(InputFileChangeEventArgs e)
+    {
+        shouldRender = false;
+        long maxFileSize = 1024 * 1024 * 15;
+        if(isUploading)
+        {
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Info, "Wait for the current upload to finish");
+            return;
+        }
+        isUploading = true;
+
+        try
+        {
+            var guid = await _httpClient.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={_stateContainer.CurrentConnectedAddress}");
+            var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+            if (!transaction.IsSuccess) return;
+
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(e.File.OpenReadStream(maxFileSize));
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(e.File.ContentType);
+            content.Add(content: fileContent, name: "\"files\"", fileName: e.File.Name);
+            content.Add(content: new StringContent(CollectionAddress), name: "\"collectionAddress\"");
+            content.Add(content: new StringContent(_stateContainer.CurrentConnectedAddress), name: "\"userAddress\"");
+            content.Add(content: new StringContent(transaction.Hash!), name: "\"hash\"");
+            var response = await _httpClient.PostAsync("Collection/UpdateProfilePicture", content);
+            if(response.IsSuccessStatusCode)
+            {
+                _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Profile picture updated");
+                _navManager.NavigateTo($"/settings/{CollectionAddress}", true);
+            }
+            else
+                _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, "There was an error updating profile picture");
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            shouldRender = true;
+            isUploading = false;
+        }
+
+    }
+
+    private bool isUploading = false;
+    public record struct Message(string contents);
+    private async Task UploadBackgroundFile(InputFileChangeEventArgs e)
+    {
+        shouldRender = false;
+        long maxFileSize = 1024 * 1024 * 15;
+        if(isUploading)
+        {
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Info, "Wait for the current upload to finish");
+            return;
+        }
+        isUploading = true;
+
+        try
+        {
+            var guid = await _httpClient.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={_stateContainer.CurrentConnectedAddress}");
+            var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+            if (!transaction.IsSuccess) return;
+
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(e.File.OpenReadStream(maxFileSize));
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(e.File.ContentType);
+            content.Add(content: fileContent, name: "\"files\"", fileName: e.File.Name);
+            content.Add(content: new StringContent(CollectionAddress), name: "\"collectionAddress\"");
+            content.Add(content: new StringContent(_stateContainer.CurrentConnectedAddress), name: "\"userAddress\"");
+            content.Add(content: new StringContent(transaction.Hash!), name: "\"hash\"");
+
+            var response = await _httpClient.PostAsync("Collection/UpdateBackgroundPicture", content);
+            if(response.IsSuccessStatusCode)
+            {
+                _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Background updated");
+                _navManager.NavigateTo($"/settings/{CollectionAddress}", true);
+            }
+            else
+                _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, "There was an error updating background");
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            shouldRender = true;
+            isUploading = false;
+        }
+    }
+
+    private async Task SubmitCollectionEditAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(collectionEdit.Website) && (!collectionEdit.Website.StartsWith("https://") || !Uri.IsWellFormedUriString(collectionEdit.Website, UriKind.Absolute)))
+            return;
+
+        var guid = await _httpClient.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={_stateContainer.CurrentConnectedAddress}");
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+        if (!transaction.IsSuccess) return;
+
+        var postBody = new { pAddress = _stateContainer.CurrentConnectedAddress, pHash = transaction.Hash, pEditInfo = collectionEdit };
+        var isEdited = await _httpClient.PostAsJsonAsync("Yokai/EditCollectionIfValid", postBody);
+        if (isEdited.IsSuccessStatusCode)
+        {
+            var colllectionConfigResult = await _httpClient.GetAsync($"Yokai/GetCollectionConfig?pAddress={CollectionAddress}");
+            if (colllectionConfigResult.IsSuccessStatusCode)
+            {
+                collectionConfig = await colllectionConfigResult.Content.ReadFromJsonAsync<BlazorWebAssymblyWeb3.Server.Collection>();
+                _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Collection edited");
+            }
+            else
+                _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, "There was an error updating Collection informations, please try again");
+        }
+        editing = false;
+    }
+}

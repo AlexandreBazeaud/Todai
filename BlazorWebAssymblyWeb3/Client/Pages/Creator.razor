@@ -1,0 +1,116 @@
+﻿@page "/creator"
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@using Newtonsoft.Json
+@using System.Xml
+@inject HttpClient _http;
+
+<style>
+
+.item >svg{
+     height: 150px;
+ }
+
+ .creator{
+     display: flex;
+     min-height: 100vh;
+     padding: 60px;
+     padding-bottom: 500px;
+ }
+</style>
+
+<div class="creator">
+    <div style="width: 30%;">
+        <div >
+            @if (CreatorYokai != null)
+            {
+                @((MarkupString)CreatorYokai.TEst())
+            }
+        </div>
+    </div>
+     <div class="column" style="width: 70%;">
+    @if (items != null)
+    {
+@foreach (var categ in items)
+{
+    <div class="row">
+        <div class="column" style="width: 100%;">
+           <CollapsableBox Name="@categ.name" src="media/list.svg">
+           <div class="wrap gap">
+            @foreach (var item in categ.items)
+            {
+                <div class="item" @onclick="() => ClickOnSvg(categ.name, item.name)">@((MarkupString)item.svg)</div>
+            }
+           </div>
+
+         </CollapsableBox>
+        </div>
+        </div>
+}
+    }
+    </div>
+</div>
+
+@code {
+    
+    /*
+     * WIP: Let you create your own yokai, maybe avatar ? or event
+     */
+
+    public CreatorYokai? CreatorYokai;
+    private List<ProbaItems> items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CreatorYokai = new CreatorYokai();
+
+        items = await _http.GetFromJsonAsync<List<ProbaItems>>("proba.json");
+        
+    }
+
+    private void ClickOnSvg(string pCategName, string pName)
+    {
+        //Console.WriteLine(pCategId);
+
+        var categ = items.First(x => x.name.Equals(pCategName, StringComparison.CurrentCultureIgnoreCase));
+        var item = categ.items.First(x => x.name.Equals(pName, StringComparison.CurrentCultureIgnoreCase));
+        Console.WriteLine(categ.name);
+
+        if (!categ.name.Equals("body", StringComparison.CurrentCultureIgnoreCase))
+        {
+            XmlDocument doc = new();
+            doc.LoadXml(item.svg);
+            var elementList = doc.GetElementsByTagName("g");
+
+            XmlElement svgItem = null;
+            foreach (var o in elementList)
+            {
+                var a = (XmlElement)o;
+                if (a.HasAttributes && a.GetAttribute("id")?.ToLower() == categ.name.ToLower())
+                    svgItem = a;
+            }
+            if (svgItem is null) return;
+            Console.WriteLine(svgItem.InnerXml);
+            CreatorYokai.GetType().GetProperty(categ.name).SetValue(CreatorYokai, new Services.Attribute()
+            {
+                Name = pName,
+                SvgCode = svgItem.InnerXml,
+                Score = uint.Parse(item.score)
+            });
+        }
+        else
+        {
+            CreatorYokai.Body = new Services.Attribute()
+            {
+                Name = pName,
+                SvgCode = item.svg,
+                Score = uint.Parse(item.score)
+            };
+        }
+        
+
+
+        StateHasChanged();
+    }
+
+}

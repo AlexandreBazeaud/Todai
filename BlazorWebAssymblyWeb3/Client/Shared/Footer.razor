@@ -1,0 +1,83 @@
+@using BlazorWebAssymblyWeb3.Client.Data
+@inject StateContainer _stateContainer;
+
+<div class="footer row-- ">
+    <div class="footer-c column">
+        <div style="gap: 70px; display:flex;">
+            <div class="column gap" style="width: 330px;">
+                <NavLink href="/" style="width: min-content;">
+                    <div class="row gap">
+                        <img height="32px" src="media/yokai_logo.svg" alt="">
+                        <div style="font-size: 1.77rem; font-weight:600;"> Todai</div>
+                    </div>
+                </NavLink>
+                <p> Discover the first Art platform for digital assets, jump on the
+                    decentralized Web 3.0 <br>
+                    Participate, get rewards.
+                </p>
+            </div>
+
+            <ul class="column" style="margin-left: 70px;">
+                <h2>NFT Platform</h2>
+                <li> <a href="/">Overview</a></li>
+                <li> <a href="/explorer">Explorer</a></li>
+                <li> <a href="/collections">Collections</a></li>
+           
+            </ul>
+            <ul class="column">
+                <h2>My Profile</h2>
+                <li> <a href="/profile/@_stateContainer.CurrentConnectedAddress/1"> Home </a> </li>
+                <li><a href="/profile/@_stateContainer.CurrentConnectedAddress/2"> Gallery</a></li>
+                <li> <a href="/profile/@_stateContainer.CurrentConnectedAddress/3">Favorites</a></li>
+                <li><a href="/profile/@_stateContainer.CurrentConnectedAddress/5"> Offers</a></li>
+            </ul>
+         
+            <ul class="column">
+                <h2>Learn more</h2>
+                           
+               
+                <div class="row gap--" style="margin-top: 10px;" >
+                    <a href="https://discord.com/invite/2r4C2VXDHz" target="_blank">
+                        <div class="social-item row--">
+                            <img src="/media/discord.svg" alt="" />
+                        </div>
+                    </a>
+                    <a href="https://twitter.com/todaiworld" target="_blank">
+                        <div class="social-item row--">
+                            <img src="/media/twitter.svg" alt="" />
+                        </div>
+                    </a>
+                    <a href="https://torimoontori.gitbook.io/todai/" target="_blank">
+                        <div class="social-item row--">
+                            <img height="22x" src="/media/gitbook.png" alt="" />
+                        </div>
+                    </a>
+                    <a href="https://medium.com/@@todaiworld" target="_blank">
+                        <div class="social-item row--">
+                            <img src="/media/medium.svg" alt="" />
+                        </div>
+                    </a>
+
+                </div>
+                 @* <li style="margin-top: 10px ;">  <a class="a-link" href="listing" > Add your collection to Todai</a> </li>    *@
+
+            </ul>
+
+
+        </div>
+
+        <div class="copyright row-sb">
+            <div>Copyright 2022</div>
+            <div></div>
+        </div>
+    </div>
+
+</div>
+
+@code
+{
+    protected override void OnInitialized()
+    {
+        _stateContainer.OnChange += StateHasChanged;
+    }
+}

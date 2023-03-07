@@ -1,0 +1,169 @@
+
+
+<style>
+      .filter-select-c {
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+      }
+
+.filter-select {
+  cursor: pointer;
+  height: 45px;
+  width: 230px;
+  gap: 12px;
+  font-size: 0.98rem;
+  line-height: 18px;
+  border: 1px solid rgba(245, 245, 245, 0.158);
+  border-radius: 5px;
+  background-color: transparent;
+  padding: 0 18px;
+}
+.filter-select > img {
+  height: 18px;
+}
+.filter-select:hover{
+      background-color: #ffffff0a;
+}
+.filter-option-list{
+   position: absolute;
+   top: 44px;
+   width: 230px;
+   border: 1px solid rgba(245, 245, 245, 0.158);
+   height: 280px;
+   overflow-y: scroll;
+   z-index: 3;
+    cursor: pointer;
+    background:transparent;
+    backdrop-filter: blur(8px);
+      font-size: 0.96rem
+}
+
+.filter-option{
+    border-bottom: 1px solid rgba(245, 245, 245, 0.158);
+    padding: 12px;
+}
+.filter-option >img{
+    height: 20px;
+}
+
+.filter-option:hover{
+    background-color: #ffffff0c;
+}
+
+.filter-select-c::-webkit-scrollbar{
+    width: 6px;
+}
+
+.active{
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+}
+
+</style>
+<div class="filter-select-c">
+ <div class="filter-select row-sb @(!filterHidden ? "active" : "")  " @onclick="filterSelect" >
+     <div class="row gap">
+     <img src="media/category_icon.svg" alt="">
+           @modeText
+     </div>
+     <img style="height:6px;" src="media/arrow_down.svg" alt="">
+ </div>
+ @if (!filterHidden)
+ {
+    <div class="filter-option-list column">
+        <div class="filter-option" @onclick="() => clickFilter(0)">
+            All Categories
+        </div> 
+        <div class="filter-option" @onclick="() => clickFilter(1)">
+            Fine art
+        </div>
+            <div class="filter-option" @onclick="() => clickFilter(8)">
+            Avatar
+        </div>
+           <div class="filter-option" @onclick="() => clickFilter(5)"> 
+            Innovation
+        </div>
+        <div class="filter-option" @onclick="() => clickFilter(7)">
+            Games
+        </div>
+            <div class="filter-option" @onclick="() => clickFilter(2)">
+           Metaverse
+        </div> 
+    </div>  
+ }
+    
+ @* <div class="filter-select row-sb @(!filterHidden ? "active" : "")  " @onclick="filterSelect" >
+     <div class="row gap">
+     <img src="media/category_icon.svg" alt=""> 
+       Blockchain
+     </div>
+     <img style="height:6px;" src="media/arrow_down.svg" alt="">
+ </div>
+ @if (!filterHidden){
+ <div class="filter-option-list column">
+    <div class="filter-option row gap-c">
+      <img src="media/ftm.svg" alt="">  Fantom
+    </div>
+  <div class="filter-option disabled-btn">
+       Klaytn
+    </div>
+   <div class="filter-option disabled-btn">
+        Gnosis
+    </div>
+       <div class="filter-option disabled-btn">
+        Arbitrum
+    </div>
+    <div class="filter-option disabled-btn">
+        Ethereum
+    </div>
+        <div class="filter-option disabled-btn">
+        Optimism
+    </div>
+        <div class="filter-option disabled-btn">
+       Binance Chain
+    </div>
+}*@
+
+</div>
+
+
+ @code{
+
+
+    [Parameter]
+    public EventCallback<ListCollectionFilter> OnFilterChange { get; set; }
+
+    private bool filterHidden {get;set;} = true ;
+     
+    private void filterSelect() => filterHidden = !filterHidden ;
+
+    private ListCollectionFilter listCollectionFilter { get; set; } = ListCollectionFilter.All;
+    private string modeText = "All";
+    public enum ListCollectionFilter
+    {
+        All = 0,
+        FineArt = 1,
+        Avatar = 8,
+        Innovation = 5,
+        Games = 7,
+        Metaverse = 2
+    }//Id come from database
+
+    private async Task clickFilter(int pId)
+    {
+        listCollectionFilter = (ListCollectionFilter)pId;
+        modeText = listCollectionFilter switch
+        {
+            ListCollectionFilter.All => "All Categories",
+            ListCollectionFilter.FineArt => "Fine Art",
+            ListCollectionFilter.Avatar => "Avatar",
+            ListCollectionFilter.Innovation => "Innovation",
+            ListCollectionFilter.Games => "Games",
+            ListCollectionFilter.Metaverse => "Metaverse"
+        };
+        await OnFilterChange.InvokeAsync(listCollectionFilter);
+        filterHidden = true;
+        //await InvokeAsync(StateHasChanged);
+    }
+ }

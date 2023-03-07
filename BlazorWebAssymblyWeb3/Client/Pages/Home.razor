@@ -1,0 +1,253 @@
+﻿@page "/Home"
+@using BlazorWebAssymblyWeb3.Client.Components
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using MetaMask.Blazor
+@inject HttpClient _http;
+@inject MetaMaskService _metaMaskService;
+
+
+ <img src="media/cloud_1.webp" alt="" style="position: fixed; height:200px; right:7%; top:500px; opacity:0.6;">
+  <img src="media/clouds_1.webp" alt="" style="position: fixed; height:400px; left:5%; top:70px; opacity:0.6;">
+
+
+<div class="home column">
+    <div class="landing-page column-center">          
+        <div class="home-heros row-sb r-c" style="width: 100%;">
+            <div class="home-hero column gap" >
+                <h1 class="text-sdw" style="text-align: left; font-size:57px;">
+                    Explore the new world<br> of
+                    digital assets. <br> Participate. Get Rewards.
+                </h1>
+                <p style="opacity: 0.8; font-size:18px;">
+                  Todai is a folkloric NFT platform, where collectors can have social & gamified experiences, while being rewarded for their participation.
+                  Powered on Fantom. <br/> <br/>
+                  No platform Token, No Investments, just Rewards.
+                </p>
+         
+                <div class="row gap">
+                    <NavLink class="nav-link" href="explorer">
+                        <button class="main-button" style="height:40px;width: 150px; font-size:20px;"> Explore</button>
+                    </NavLink>
+                    <NavLink class="nav-link" href="https://torimoontori.gitbook.io/todai/" target="_blank" >
+                       <button class="button-edit" style="height:40px;width: 150px; font-size:18px; font-family:Titillium Web; border-radius:3px;">Learn More</button>
+                    </NavLink>
+                </div>
+            </div>
+
+                <div class="nft-item" style="">
+                    <a href="https://todai.world/asset/0x59c7b16369422959eeb218c7270e3b5132cb1f28/181">
+                    <div class="nft-img" >
+                        <img src="media/unreal_yokai.svg" alt="" >
+                    </div>
+                    <div class="nft-item-footer">
+                        <div class="rank bold"></div> Unreal Yokai 181
+                    </div>
+                     </a>
+                </div>
+
+        </div>
+        @* <div style="border-bottom: 1px solid white; width:80%; opacity:0.2; margin-top:40px;"></div> *@
+        <h2 style="margin-top: 80px;"> Todai Features</h2>
+        <div class="landing-list column-center">
+    
+            <div class="wrap">
+                <div class="card ">
+                    <img height="80px" src="media/search_icon_2.svg" alt="">
+                    <div class="column-center">
+                        <div style="font-size: 25px; font-weight:600;"> Search Engine</div>
+                        <p>
+                            Explore NFT projects that match your standards, and find the next
+                            gems.
+                        </p>
+                    </div>
+
+                    <a href="https://todai.world/explorer">
+                        <button class="button-edit" style="height:28px;">Explore</button>
+                    </a>
+                </div>
+                <div class="card ">
+                    <img height="80px" src="media/gamified.svg" alt="">
+                    <div class="column-center">
+                        <div style="font-size: 25px; font-weight:600;"> Gamified Experience</div>
+                        <p> Engage with the NFT community, comment, swap, play, xp, earn. </p>
+                    </div>
+                  
+                   <a href="https://todai.world/explorer">
+                        <button class="button-edit" style="height:28px;"> Coming Soon</button>
+                     </a>
+                </div>
+                <div class="card ">
+                    <img height="80px" src="media/assetswap.svg" alt="">
+                    <div class="column-center">
+                        <div style="font-size:25px; font-weight:600;">Market Aggregator</div>
+                        <p>Trade your assets, and access data from all other marketplace. </p>     
+                    </div>
+
+                    <a href="https://todai.world/asset/0x59c7b16369422959eeb218c7270e3b5132cb1f28/181"
+                       target="_blank">
+                        <button class="button-edit" style="height:28px;">Make Offers</button>
+                    </a>
+                </div>
+                <div class="card ">
+                    <img height="80px" src="media/rare_icon.svg" alt="">
+                    <div class="column-center">
+                        <div style="font-size: 25px; font-weight:600;"> Rarity & Tools</div>
+                        <p> Use rarity algorithms, and a large choice of useful tools.</p>
+                    </div>
+                    
+                    <a href="https://todai.world/Collection/0x59c7b16369422959eeb218c7270e3b5132cb1f28"
+                       target="_blank">
+                        <button class="button-edit" style="height:28px;">See Rarity</button>
+                    </a>
+                </div>
+
+            </div>
+        </div>
+        @* <div style="border-bottom: 1px solid white; width:80%; opacity:0.2; margin-top:40px;"></div> *@
+        <h2 style="margin-top: 80px;"> Top Sealed Collections</h2>
+        <div class="wrap" style="gap: 50px; justify-content:center;">
+            @if (collectionTrendings != null)
+            {
+                @foreach (var collectionTrending in collectionTrendings)
+                {
+                    <ExplorerItem Item="(ExplorerItemValue)collectionTrending"/>
+                }
+            }
+        </div>
+
+   <h2 style="margin-top: 80px;">Roadmap</h2>
+           <div class="row wrap gap- r-c" style="margin-bottom: 150px; justify-content:center;">
+             <div class="road-q column gap--" >
+                <div class="quarter row--" >
+                    <div class="column--">
+                        <p> 2022</p>
+                         <h2 style="line-height: 26px;">Q1</h2>
+                    </div>
+                </div>
+                <div class="column gap" style="opacity: 0.7;">
+                    <div class="row-- gap--">
+                        <h2>Todai Platform</h2>
+                    </div>
+                    <div class="row-- gap--">                     
+                        <p style="color: linear-gradient(148.39deg, #6500B4 15.22%, #B02FFF 87.58%);"> <img height="18px" src="media/check_2.svg" alt=""> Initializing Todai website</p>
+                    </div>
+                    <div class="row-- gap--">  
+                        <p>Host Yokai NFT Collection <img height="18px" src="media/check_2.svg" alt=""></p>
+                    </div>
+                    <div class="row-- gap--">                     
+                        <p> <img height="18px" src="media/check_2.svg" alt=""> Rarity Rankings  </p>
+                    </div>
+                    <div class="row-- gap--">                     
+                        <p> <img height="18px" src="media/check_2.svg" alt=""> Add Fantom Collections </p>
+                    </div>
+               
+
+                </div>
+             </div>
+
+             <div class="team-card road-q column gap--" >
+                <div class="quarter row--" >
+                    <div class="column--">
+                        <p> 2022</p>
+                         <h2 style="line-height: 26px;">Q2</h2>
+                    </div>
+                </div>
+                <div class="column gap">
+                    <div class="row-- gap--">
+                        <h2>Social & Tools</h2>
+                    </div>
+                    <div class="row-- gap--">  
+                        <p> NFT Swap 1-1 <img height="18px" src="media/check_2.svg" alt=""></p>
+                    </div>
+                     <div class="row-- gap--">  
+                        <p> Collectors Profile <img height="18px" src="media/check_2.svg" alt=""></p>
+                    </div>
+                    <div class="row-- gap--">                     
+                        <span> MarketPlace <img height="18px" src="media/yokai_like.svg" alt=""> </span>
+                    </div>
+                     <div class="row-- gap--">                     
+                        <span > More Project info/stats</span>
+                    </div>
+                     <div class="row-- gap--">                     
+                        <span > Comment sections</span>
+                    </div>
+                     <div class="row-- gap--">                     
+                        <span >Advanced Search Engine</span>
+                    </div>
+
+                </div>
+             </div>
+                <div class="road-q column gap--" >
+                <div class="quarter row--" >
+                    <div class="column--">
+                        <p> 2022</p>
+                         <h2 style="line-height: 26px;">Q3</h2>
+                    </div>
+                </div>
+                <div class="column gap">
+                    <div class="row-- gap--">
+                        <h2> Incentives</h2>
+                    </div>
+                    <div class="row-- gap--">                     
+                        <span > Profile XP/Leveling  </span>
+                    </div>
+                    <div class="row-- gap--">  
+                        <span>Item Chest drop to active users</span>
+                    </div>
+                    <div class="row-- gap--">  
+                        <span> NFT stacking innovation</span>
+                    </div>
+                     <div class="row-- gap--">  
+                        <span> Medals distribution </span>
+                    </div>
+                     <div class="row-- gap--">  
+                        <span></span>
+                    </div>
+                </div>
+             </div>
+            <div class="road-q column gap--" >
+                <div class="quarter row--" >
+                    <div class="column--">
+                        <p> 2022</p>
+                         <h2 style="line-height: 26px;">Q4</h2>
+                    </div>
+                </div>
+                <div class="column gap">
+                    <div class="row-- gap--">
+                        <h2>App & Games</h2>
+                    </div>
+                     <div class="row-- gap--">                     
+                        <span> Discord Bot</span>
+                    </div>
+                    <div class="row-- gap--">  
+                        <span> Todai Mobile App</span>
+                    </div>
+                    <div class="row-- gap--">  
+                        <span>Metaverse Art Galleries</span>
+                    </div>
+                     <div class="row-- gap--">  
+                        <span> Yokai Card Game</span>
+                    </div>
+                </div>
+             </div>
+           </div>
+        
+</div>
+</div>
+
+@code{
+
+    private List<BlazorWebAssymblyWeb3.Server.Collection> collectionTrendings;
+    private string? connectedAddress;
+    protected override async Task OnInitializedAsync()
+    {
+        
+        var hasMetaMask = await _metaMaskService.HasMetaMask();
+        var isSiteConnected = await _metaMaskService.IsSiteConnected();
+        if (isSiteConnected)
+            connectedAddress = await _metaMaskService.GetSelectedAddress();
+        
+        collectionTrendings = await _http.GetFromJsonAsync<List<BlazorWebAssymblyWeb3.Server.Collection>>("Yokai/Trendings");
+    }
+
+}

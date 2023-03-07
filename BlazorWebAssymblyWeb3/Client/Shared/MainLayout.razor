@@ -1,0 +1,14 @@
+﻿@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@inherits LayoutComponentBase
+@inject AlertMessageService _alertMessageService
+
+<div class="page">
+        
+        <NavMenu />
+    <main class="main">
+        @Body
+            <AlertMessage @ref="_alertMessageService.AlertMessage"/>
+    </main>
+    <Footer/>
+</div>

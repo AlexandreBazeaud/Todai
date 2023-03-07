@@ -1,0 +1,635 @@
+p {
+  opacity: 0.6;
+  font-weight: 300;
+  font-size: 0.98rem;
+}
+
+.collection-asset {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  position: relative;
+}
+
+.asset-header {
+  width: 100%;
+  padding-left: 3.2vw;
+  padding-right: 3.2vw;
+  margin-top: 10px;
+  margin-bottom: 24px;
+}
+
+.asset-header-stats {
+  margin-bottom: 20px;
+  cursor: default;
+}
+
+.asset-header-stats > p > img {
+  height: 15px;
+}
+.asset-header-stats > p {
+  gap: 3px;
+}
+
+.nft-header {
+  align-items: flex-end;
+  margin-bottom: 1.5vh;
+  width: 86%;
+  height: 8vh;
+  padding-bottom: 12px;
+  margin-top: 10px;
+}
+
+.asset-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height:calc(100vh - 260px) ;
+  z-index: -2;
+  box-shadow: inset -7px -1px 16px rgba(0, 0, 0, 0.25);
+}
+
+.asset-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-family: "Roboto";
+  height:calc(100vh - 260px) ;
+}
+
+.asset-nft{
+  height: 82%;
+}
+
+.asset-nft > img {
+  height: 100%;
+  object-fit: contain;
+}
+
+.nft-rank {
+  color: rgba(167, 35, 255, 0.85);
+  font-weight: bold;
+  font-size: 1rem;
+  opacity: 1;
+}
+
+.asset-right {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 1400px;
+  margin: auto;
+  margin-top: -60px;
+  padding-top: 75px;
+  /* height:calc(100vh - 10px) ; */
+}
+
+ .asset-right::-webkit-scrollbar {
+  width: 6px;
+}
+
+.profile-link {
+  color: rgba(167, 35, 255, 0.85);
+  font-weight: 600;
+}
+
+.profile-link:hover {
+  color: #fff;
+  text-decoration: underline 2px;
+}
+
+.transfer-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-left: -300px;
+  margin-top: -150px;
+  font-size: 1rem;
+  width: 600px;
+  height: 130px;
+  padding: 20px;
+  z-index: 500;
+  background-color: rgba(245, 245, 245, 0.088);
+  background: #ffffff12;
+  backdrop-filter: blur(6px);
+  border-radius: 5px;
+  box-shadow: -10px 0px 30px rgb(0 0 0 / 25%);
+}
+
+.transfer-btn {
+  border: none;
+  color: rgba(245, 245, 245, 0.685);
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.transfer-btn:hover {
+  background-color: rgba(245, 245, 245, 0.178);
+  color: whitesmoke;
+}
+
+/* ::deep .nft-img{
+  height: auto ;
+}
+
+::deep .nft-menu{
+  display: none;
+}
+::deep  .nft-item:hover .nft-more{
+  display: none;
+ } */
+
+.search-bar {
+  width: 400px !important;
+  height: 35px;
+}
+
+.search-bar {
+  color: whitesmoke;
+  background: rgba(255, 255, 255, 0.116);
+  box-shadow: inset -3px 4px 4px rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  padding-left: 10px;
+  border: none;
+  transition: 0.6s;
+  font-family: "Titillium Web";
+}
+
+
+.rarity {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-top: 25px;
+  height: 80px;
+  padding: 0px 40px;
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 10px;
+  cursor: default;
+}
+.rarity span{
+  font-size:0.96rem !important; 
+}
+
+.asset-name {
+  margin-top: 2vh;
+  font-size: 1.8vw;
+}
+
+.asset-theme {
+  position: absolute;
+  margin-top: -60px;
+  top: 0;
+  right: 0;
+  object-fit: cover;
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, rgba(0, 0, 0, 0.2) 100%);
+  width: 100vw;
+  height:calc(100vh - 200px) ;
+  z-index: -1;
+  box-shadow: inset -7px -1px 16px rgba(0, 0, 0, 0.25);
+}
+
+.cover {
+  position: absolute;
+  width: 62vw;
+  height:  333px;
+  margin-top: -60px;
+  top: 0;
+  right: 0;
+  background: linear-gradient(180deg, #2a2236cc 70%, #1c1e2c00 100%);
+  z-index: -1;
+}
+
+.rarity-score {
+  font-weight: 500;
+  font-size: 1.4rem;
+  color: rgba(167, 35, 255, 0.85);
+}
+
+.sp {
+  position: absolute;
+  opacity: 0.4;
+  height: 5vw;
+  left: 4vw;
+}
+
+.sp.r {
+  left: unset;
+  right: 4vw;
+}
+
+.attributes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+
+.asset-tab::-webkit-scrollbar {
+  width: 3px;
+}
+
+.asset-tab {
+  padding-left: 40px;
+  padding-right: 40px;
+  padding-top: 20px;
+  padding-bottom: 800px;
+  gap: 12px;
+  /* overflow-y: scroll; */
+  height: 100%;
+}
+
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 500px;
+  margin-right: 28px;
+  margin-bottom: 1.2vh;
+}
+
+.custom-select {
+  cursor: default !important;
+  margin: 8px !important;
+  gap: 8px;
+  height: 38px;
+  line-height: 18px;
+}
+.custom-select > img {
+  height: 18px;
+  margin-top: -3px;
+}
+
+.score {
+  background: rgba(167, 35, 255, 0.85);
+  padding: 0px 10px;
+  border-radius: 50px;
+  color: rgba(255, 255, 255, 0.819);
+}
+.name {
+  font-size: 0.9rem;
+  font-weight: 300;
+}
+
+::deep .swap{
+  align-items: center;
+  height: 90vh;
+  padding: 20px 40px;
+  overflow-y: scroll;
+}
+
+.swap .main-button{
+  border-radius: 50px;
+  padding: 0px 30px;
+}
+.swap .button-edit{
+  border-radius: 50px;
+  padding: 0px 30px;
+}
+
+.swap-content::-webkit-scrollbar{
+   display: none;
+}
+.swap-c::-webkit-scrollbar{
+  display: inline;
+}
+.select-collection{
+  height: 70%;
+}
+.select-item{
+  height: 70%;
+}
+
+::deep .swap-content{
+  margin-top: 20px;
+  overflow-y: scroll;
+  height: 98%;
+}
+
+::deep .swap-content::-webkit-scrollbar{
+  display: none;
+}
+
+::deep .swap-collection{
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  height: 70px;
+  padding: 10px;
+  border-bottom: 1px solid rgba(245, 245, 245, 0.15);
+  background-color: transparent;
+  width: 100%;
+}
+
+.swap-collection:hover{
+  background-color: rgba(255, 255, 255, 0.164);
+  cursor: pointer;
+}
+
+.selected{
+  background-color: rgba(255, 255, 255, 0.164);
+  cursor: default;
+  opacity: 0.7;
+}
+
+
+
+.selected:hover{
+  cursor: default;
+}
+
+.swap-collection img{
+  
+  height: 50px;
+}
+.swap::-webkit-scrollbar{
+  display: none;
+}
+
+::deep .offer-items img{
+  margin-top: 30px;
+  height: 150px;
+}
+
+
+.asset-attribute {
+  padding-left: 16px;
+  padding-right: 16px;
+  height: 58px;
+  background: rgba(245, 245, 245, 0.03);
+  border-radius: 3px;
+  border: solid 1px transparent;
+  transition: 0.35s ease;
+  border-radius: 5px;
+  border-top-right-radius: 0;
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.asset-collection{
+  border: 0px solid #9121DE;
+  border-radius: 50%;
+  height:48px;
+}
+
+.asset-collection:hover{
+  border: 2px solid #e7c5fd;
+}
+
+
+
+.listing{
+  width: 340px;
+}
+
+
+.listings{
+  font-size: 1rem;
+  width: 100%;
+}
+.table-header{
+  margin-top: 10px;
+}
+.listings >.row{
+  border-bottom: 1px solid rgba(255, 255, 255, 0.068);
+  padding-bottom: 10px;
+}
+
+.listings >.row >div{
+  width: 120px;
+  text-align: right;
+  
+}
+
+.lt-price{
+ width: 170px !important;
+ text-align: left !important;
+}
+
+.attribute-type{
+  background: rgba(255, 255, 255, 0.015);
+  color: rgba(255, 255, 255, 0.75);
+  padding: 1px 8px;
+  font-size: 0.82rem;
+  margin-bottom: -4px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+.pourcent {
+  opacity: 0.6;
+  font-size: 0.72rem;
+  font-family: "Roboto";
+  font-weight: 300;
+  margin-top: 2px;
+}
+
+.gallery-menu {
+  position: relative;
+  width: 100%;
+  display: flex;
+  padding-left: 3.2vw;padding-right: 3.2vw;
+}
+.gallery-menu > div > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  background-color: transparent;
+  margin-right: 40px;
+  border: none;
+  padding: 10px 0px 10px 0px;
+  cursor: pointer;
+  font-family: "Titillium Web";
+  color: rgba(245, 245, 245, 0.534);
+}
+.tab-icon {
+  width: 20px;
+  opacity: 0.9;
+}
+.markets{
+  width: 800px;
+}
+.asset-header span{
+  font-size: 0.95rem;
+}
+/* Mobile Version */
+
+@media (max-width: 950px) {
+  .collection-asset {
+    flex-direction: column;
+    align-items: center;
+  }
+  .asset-market {
+    flex-direction: column;
+  }
+  .asset-bg {
+    position: absolute;
+    width: 100%;
+    height: 70vh;
+  }
+  
+  .asset-market{
+    border: 1px solid rgba(255, 255, 255, 0.103);
+    border-radius: 5px;
+
+  }
+  .asset-market button{
+    margin-bottom: 12px;
+  }
+
+
+  .asset-market-dollar{
+    font-size: 13px;
+  }
+  .asset-market  .row{
+   align-items: center;
+   justify-content: center;
+   width: 100%;
+  }
+  /* .asset-market .row:nth-child(2n+2){
+    flex-direction: column;
+  } */
+
+  .asset-tools{
+    flex-direction: row;
+    align-items: center;
+    right: 50%;
+    transform: translate(50%);
+    bottom: -15px;
+    top: unset;
+  }
+  .asset-tools-btn{
+    border: transparent;
+
+  }
+
+  .tools-custom {
+    border-radius: 6px;
+    margin-top: 0px;
+    margin-left: 8px;
+    border: 1px solid rgba(104, 5, 210, 0.874);
+  }
+  
+  .asset-left {
+    width: 100%;
+    height: 50vh;
+  }
+
+  .nft-header {
+    width: 96%;
+    margin-bottom: unset;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .nft-header > img {
+    height: 40px;
+  }
+  .nft-rank {
+    font-size: 1rem;
+  }
+  .nft-rank > i {
+    font-size: 1.6rem !important;
+  }
+  .rarity-score {
+    font-size: 1rem;
+  }
+  .rarity{
+    margin-top: 0;
+    padding: 10px 30px;
+    font-size: 0.9rem !important;
+  }
+  .sp {
+    height: 60px;
+  }
+  .asset-nft > img {
+    max-width: 80vw;
+  }
+ .asset-header h1{
+   font-size: 1rem;
+ }
+ .asset-header span{
+  font-size: 0.9rem;
+}
+  .asset-right {
+    width: 100%;
+    overflow-y: unset;
+    margin-top: 0;
+    padding-top: 26px;
+  }
+
+  .cover {
+    position: absolute;
+    height: 240px;
+    width: 100%;
+    margin-top: 0px;
+  }
+  .asset-theme {
+    position: absolute;
+    height: 200px;
+    width: 100%;
+    margin-top: 0px;
+  }
+
+  .asset-header {
+    flex-direction: column;
+    padding-left: 5vw;
+    padding-right: 5vw;
+  }
+  .asset-header > div {
+    width: 100%;
+  }
+  .asset-header > img {
+    margin-left: 10px;
+  }
+  .gallery-menu {
+    transform: scale(0.82);
+    padding-left: unset;
+    margin-left: -10px;
+  }
+  .gallery-menu > div > button {
+    width: unset;
+  }
+  .category {
+    margin-right: 0;
+    max-width: unset;
+  }
+  .button-group {
+    align-self: center;
+  }
+  .attributes {
+    grid-template-columns: repeat(1, 1fr);
+  }
+
+  h1 {
+    font-size: 1.3rem;
+  }
+  .asset-tab {
+    padding: 16px;
+    font-size: 0.98rem;
+  }
+
+  .asset-header-stats > p {
+    font-size: 0.86rem;
+  }
+}
+
+.button-group {
+  display: none;
+}
+
+@media (max-width: 950px) {
+  .navbar {
+    background-color: #501431 !important ;
+  }
+ 
+}
+.navbar {
+  background-color: #501431 !important ;
+}

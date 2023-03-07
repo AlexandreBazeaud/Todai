@@ -1,0 +1,116 @@
+﻿@page "/collections"
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@using static BlazorWebAssymblyWeb3.Client.Components.Global.FilterSelect
+@inject HttpClient Http
+<PageTitle> Collections | Todai</PageTitle>
+
+
+  <img src="media/cloud_1.webp" alt="" style="position: fixed; height:200px; right:7%; top:500px; opacity:0.6;">
+  <img src="media/clouds_1.webp" alt="" style="position: fixed; height:400px; left:5%; top:70px; opacity:0.6;">
+<div class="wa column gap " style="padding-bottom: 500px;">
+    @* <div class=" lc-title row-- gap-">
+        <div class="title text-shadow" style="font-size: 49px;">Top NFTs Collections</div>
+    </div> *@
+    <div class="row-- gap" style="margin-bottom:30px;align-self:end;">  
+       @* <FilterSelect/>*@
+        <FilterSelect OnFilterChange="onFilterChange" />
+    </div>
+    <div class="collection-table" style="margin:auto;    ">
+        <div class="header-row">
+            <div class="rank" style="width: 50px;"></div>
+            <div style="width: 370px; justify-content:unset;">Collection</div>
+            
+            <div style="width: 150px;">7d Volume    </div>
+            <div style="width: 150px;">Avg. Price</div>
+            <div style="width: 150px;">Assets</div>
+            <div style="width: 150px;">Total Volume</div>
+              <div style="width: 150px;">Total Sales</div>
+            <div style="width: 150px;">Release Date</div>
+           
+        </div>
+        <div >
+            @* /* height:500px;overflow-y:scroll; /* *@
+            @if (whitelistedCollections != null)
+            {
+                <InfiniteScrolling @ref="child" ItemsProvider="@LoadCollection" CountToLoad="20">
+                    <ItemTemplate Context="collection">
+                        <a href="/Collection/@collection.Address">
+                            <div class="collection-row">
+                                <div class="rank" style="width: 50px;">@(whitelistedCollections.IndexOf(collection) + 1) </div>
+                                <div class="collection" style="width: 370px; justify-content:unset; @(collection.IsWhitelisted ?? false ?"":"color:white;")">
+                                    <img height="40" src="https://todai.world/images/@collection.Address/ProfilePicture" alt=""> @collection.Name
+                                </div>
+                                <div style="width: 150px;">@collection.Stats.Volume7D</div>
+                                <div style="width: 150px;">@collection.Stats.AveragePrice</div>
+                                <div style="width: 150px;">@collection.TotalSupply</div>
+                                <div style="width: 150px;">@collection.Stats.Volume</div>
+                                <div style="width: 150px;">@collection.Stats.NumberOfSales</div>
+                                <div style="width: 150px;">@collection.ReleaseDate?.ToShortDateString()</div>
+                            </div>
+                        </a>
+                    </ItemTemplate>
+                    <LoadingTemplate>
+                        <div class="nft-item load themed-box"></div>
+                        <div class="nft-item load themed-box"></div>
+                        <div class="nft-item load themed-box"></div>
+                    </LoadingTemplate>
+                </InfiniteScrolling>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+
+    private int rank = 1;
+    private List<BlazorWebAssymblyWeb3.Server.Collection> whitelistedCollections;
+    private List<BlazorWebAssymblyWeb3.Server.Collection>? filteredCollection = null;
+
+    private InfiniteScrolling<BlazorWebAssymblyWeb3.Server.Collection> child;
+    private List<BlazorWebAssymblyWeb3.Server.Collection> loaded = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        whitelistedCollections = (await Http.GetFromJsonAsync<List<BlazorWebAssymblyWeb3.Server.Collection>>("Yokai/GetWhitelistedCollection")).OrderBy(x => x.Id).ToList();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if(child != null)
+            await child.LoadMoreItems();
+    }
+
+    private async ValueTask<ItemsProviderResult<BlazorWebAssymblyWeb3.Server.Collection>> LoadCollection(ItemsProviderRequest request)
+    {
+        if (filteredCollection != null)
+        {
+            var numEmployees = Math.Min(request.Count, filteredCollection.Count - request.StartIndex);
+            var toLoad = filteredCollection.Skip(request.StartIndex).Take(+numEmployees).ToList();
+
+            loaded.AddRange(toLoad);
+
+            return new ItemsProviderResult<BlazorWebAssymblyWeb3.Server.Collection>(toLoad, filteredCollection.Count);
+        }
+        else
+        {
+            var numEmployees = Math.Min(request.Count, whitelistedCollections.Count - request.StartIndex);
+            var toLoad = whitelistedCollections.Skip(request.StartIndex).Take(+numEmployees).ToList();
+
+            loaded.AddRange(toLoad);
+
+            return new ItemsProviderResult<BlazorWebAssymblyWeb3.Server.Collection>(toLoad, whitelistedCollections.Count);
+        }
+    }
+
+    private async Task onFilterChange(ListCollectionFilter filter)
+    {
+        if (filter == ListCollectionFilter.All)
+            filteredCollection = null;
+        else
+            filteredCollection = whitelistedCollections.Where(x => x.CollectionLinkCategories.Any(y => y.CategoryId == (int)filter)).ToList();
+
+        loaded.Clear();
+        await child.Reset(true);
+    }
+
+}

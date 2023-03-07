@@ -1,0 +1,30 @@
+﻿<style>
+    .border{
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+</style>
+<div class="category-attribute row-sb"  @onclick="Collapse" style=" @(Collapsed?"":"background:rgba(255, 255, 255, 0.1)");" >
+    <div class="row gap"><div>@Name</div> @if(Active > 0){<div class="nb-active">@(Active)</div>} </div>
+    <div class="category-right row--"> @Count<img src="/media/arrow_down.svg" alt=""></div> 
+</div>
+<div class="items-grow @(Collapsed?"":"border")" style="height: @(Collapsed?"0;":"fit-content;");">
+        <div>
+         @ChildContent
+        </div>
+    </div>
+
+
+@code {
+    public bool Collapsed { get; set; } = true;
+
+    [Parameter]
+    public int Count { get; set; }
+    [Parameter]
+    public string Name { get; set; }
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    [Parameter]
+    public int Active { get; set; }
+
+    private async Task Collapse() => Collapsed = !Collapsed;
+}

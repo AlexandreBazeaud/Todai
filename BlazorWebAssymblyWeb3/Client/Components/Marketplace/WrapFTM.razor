@@ -1,0 +1,177 @@
+@using BlazorWebAssymblyWeb3.Client.Data
+@using System.Numerics
+@using BlazorWebAssymblyWeb3.Client.Services
+@inject IJSRuntime _jsRuntime;
+@inject AlertMessageService _alertMessageService;
+@inject HttpClient _httpClient;
+@inject StateContainer _stateContainer;
+
+<div class="modal market-orders column gap--">
+  <h2>FTM Station</h2>
+   <div class="token-balance row-sb" style="width: 100%;">
+        <div class="row gap">
+            <img height="35" src="media/ftm.svg" alt="">
+             <div class="column" style="margin-top: -2px;">
+                 <div class="row" style="gap:2px">FTM </div>
+                 <p>Fantom</p>
+             </div>
+        </div>
+        <div class="column">
+            <div style="text-align: right;"> @balanceFTM </div>
+            <p style="text-align: right;"> @FTMprice $</p>
+        </div>
+    </div>
+     <div class="token-balance row-sb" style="width: 100%;">
+        <div class="row gap">
+            <img height="35" src="media/wftm.svg" alt="">
+             <div class="column" style="margin-top: -2px;">
+                 <div class="row" style="gap:2px">wFTM </div>
+                 <p>Wrapped Fantom</p>
+             </div>
+        </div>
+        <div class="column">
+            <div style="text-align: right;"> @balanceWFTM </div>
+            <p style="text-align: right;"> @WFTMprice $</p>
+        </div>
+    </div>
+    <div class="input-price row-sb gap-" style="margin-top: 2px;">
+        <div class="wrap-unwrap row gap" @onclick="changeWrapMode"> 
+            @if (unwrapMode)
+            {
+                <img height="18" src="media/wftm.svg" alt="">
+                <img height="10" src="media/arrow_right.svg" alt="">
+                <img height="18" src="media/ftm.svg" alt="">
+            }
+            else
+            {
+                <img height="18" src="media/ftm.svg" alt=""> 
+                <img height="10" src="media/arrow_right.svg" alt=""> 
+                <img height="18" src="media/wftm.svg" alt="">
+            }
+        </div>
+        @* <div class="row gap">  <img height="18" src="media/wftm.svg" alt=""> -><img height="18" src="media/ftm.svg" alt=""></div> *@
+        <div class="row gap">
+            <input type="text" placeholder="0.0" @bind="amountToTransfer" @bind:event="oninput" />
+            <div style="font-size: 0.9rem;">FTM</div>
+        </div>
+    </div>
+@* <div class="row-sb">
+            <p>You will receive</p>
+            <div class="row" style="gap: 2px;">
+                <p style="font-size: 13px; margin-bottom:-3px">$ 11&nbsp; </p>180 wFTM
+            </div>
+        </div> *@
+   <span style="margin-bottom: -4px;"></span>
+    @if (!unwrapMode)
+    {
+        @if(isTransactionRunning)
+        {
+             <button class="main-button main-btn-load row gap" disabled style="padding-right: 26px;">
+                 <img height="26" src="media/loader.svg"> Wrap
+             </button>
+        }
+        else if(balanceFTM < (amountToTransfer ?? 0))
+        {
+             <button class="main-button" disabled>Insufficient balance</button>
+        }
+        else
+        {
+            <button class="main-button" @onclick="Wrap">Wrap</button>
+        }
+    }
+    else
+    {
+        @if (isTransactionRunning)
+        {
+            <button class="main-button main-btn-load row gap" disabled style="padding-right: 26px;">
+                <img height="26" src="media/loader.svg"> Unwrap
+            </button>
+        }
+        else if (balanceWFTM < (amountToTransfer ?? 0))
+        {
+            <button class="main-button" disabled>Insufficient balance</button>
+        }
+        else
+        {
+            <button class="main-button" @onclick="Unwrap">Unwrap</button>
+        }
+    }
+</div> 
+
+<div class="modal-bg" @onclick="exitConfirm"></div>
+@code{
+    [Parameter]
+    public EventCallback Close { get; set; }
+
+    private async Task exitConfirm()
+    {
+        //confirming = false;
+        if(isTransactionRunning) return;
+        await Close.InvokeAsync();
+        //await OnOfferCreated.InvokeAsync(false);
+    }
+
+    private BigInteger balanceWFTM;
+    private string WFTMprice;
+    private BigInteger balanceFTM;
+    private string FTMprice;
+    //private bool isApproved;
+    private bool isTransactionRunning;
+    private bool confirming;
+    private bool isDone;
+    private int? amountToTransfer;
+    private bool unwrapMode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateBalance();
+    }
+
+    private void changeWrapMode() => unwrapMode = !unwrapMode;
+
+    private async Task UpdateBalance()
+    {
+        var hexWFTMBalance = await _jsRuntime.InvokeAsync<string>("RecoverLib.GetWFTMBalance");
+
+        balanceWFTM = BigInteger.Parse($"0{hexWFTMBalance.Substring(2)}", System.Globalization.NumberStyles.AllowHexSpecifier) / 1000000000000000000;
+        WFTMprice = string.Format("{0:N2}", (double)balanceWFTM * _stateContainer.FantomPrice);
+
+        var hexFTMBalance = await _jsRuntime.InvokeAsync<string>("RecoverLib.getBalance", _stateContainer.CurrentConnectedAddress);
+
+        balanceFTM = BigInteger.Parse($"0{hexFTMBalance.Substring(2)}", System.Globalization.NumberStyles.AllowHexSpecifier) / 1000000000000000000;
+        FTMprice = string.Format("{0:N2}", (double)balanceFTM * _stateContainer.FantomPrice);
+    }
+
+    private async Task Wrap()
+    {
+        var reference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.WrapFTM", amountToTransfer, reference);
+    }
+
+    private async Task Unwrap()
+    {
+        var reference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.UnwrapFTM", amountToTransfer, reference);
+    }
+
+    [JSInvokable]
+    public void WaitingTransaction()
+    {
+        isTransactionRunning = true;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task TransactionDone(bool pIsSucess, string pError = "")
+    {
+        isDone = true;
+        isTransactionRunning = false;
+        if (pIsSucess)
+        {
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Wrapped");
+            await UpdateBalance();
+        }
+        else
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+    }
+}

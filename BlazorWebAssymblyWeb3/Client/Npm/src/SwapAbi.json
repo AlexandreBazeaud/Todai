@@ -1,0 +1,396 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "internalType": "contract Authority",
+        "name": "_authority",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "acceptOffer",
+    "inputs": [
+      {
+        "internalType": "struct NFTExchange.Offer",
+        "name": "offer",
+        "type": "tuple",
+        "components": [
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "addCollection",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_collection",
+        "type": "address"
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "authority",
+    "inputs": [],
+    "outputs": [
+      {
+        "internalType": "contract Authority",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "cancelOffer",
+    "inputs": [
+      {
+        "internalType": "struct NFTExchange.Offer",
+        "name": "offer",
+        "type": "tuple",
+        "components": [
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createOffer",
+    "inputs": [
+      {
+        "internalType": "struct NFTExchange.Offer",
+        "name": "offer",
+        "type": "tuple",
+        "components": [
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "isWhitelisted",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_collection",
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "isWhitelisted",
+        "type": "bool"
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "offers",
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "removeCollection",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_collection",
+        "type": "address"
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setAuthority",
+    "inputs": [
+      {
+        "internalType": "contract Authority",
+        "name": "newAuthority",
+        "type": "address"
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setOwner",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "whitelistedCollection",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "withdrawAll",
+    "inputs": [],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AuthorityUpdated",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true
+      },
+      {
+        "name": "newAuthority",
+        "type": "address",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OfferAccepted",
+    "inputs": [
+      {
+        "name": "offer",
+        "type": "tuple",
+        "indexed": false,
+        "components": [
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OfferCanceled",
+    "inputs": [
+      {
+        "name": "offer",
+        "type": "tuple",
+        "indexed": false,
+        "components": [
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OfferCreated",
+    "inputs": [
+      {
+        "name": "offer",
+        "type": "tuple",
+        "indexed": false,
+        "components": [
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnerUpdated",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true
+      }
+    ],
+    "anonymous": false
+  }
+]

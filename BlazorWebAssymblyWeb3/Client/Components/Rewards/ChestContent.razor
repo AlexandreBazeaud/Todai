@@ -1,0 +1,462 @@
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+
+<div class="wrap gap--" style="justify-content: center;">
+    <div class="chests team-card column" @onclick="seeOrdinnary">
+        <img height="70" src="media/ordinary_chest.png" alt="">
+        <div>Ordinnary </div>
+        <p>@chestState[0]</p>
+    </div>
+    <div class="chests team-card column" @onclick="seeUnusual">
+        <img height="70" src="media/unusual_chest.png" alt="">
+        <div>Unusual </div>
+        <p>@chestState[1]</p>
+    </div>
+    <div class="chests team-card column" @onclick="seeSurprising">
+        <img height="70" src="media/surprising_chest.png" alt="">
+        <div>Surprising </div>
+        <p>@chestState[2]</p>
+    </div>
+    <div class="chests team-card column" @onclick="seeImpressive">
+        <img height="70" src="media/impressive_chest.png" alt="">
+        <div>Impressive </div>
+        <p>@chestState[3]</p>
+    </div>
+    <div class="chests team-card column" @onclick="seeBloody">
+        <img height="70" src="media/bloody_chest.png" alt="">
+        <div>Bloody</div>
+        <p>@chestState[4]</p>
+    </div>
+    <div class="chests team-card column" @onclick="seePhenomenal">
+        <img height="70" src="media/phenomenal_chest.png" alt="">
+        <div>Phenomenal</div>
+        <p>@chestState[5]</p>
+    </div>
+    <div class="chests team-card column" @onclick="seeArtistic">
+        <img height="70" src="media/artistic_chest.png" alt="">
+        <div>Artistic </div>
+        <p>@chestState[6]</p>
+    </div>
+    <div class="chests team-card column" @onclick="seeUnreal">
+        <img height="70" src="media/unreal_chest.png" alt="">
+        <div>Unreal </div>
+        <p>@chestState[7]</p>
+    </div>
+</div>
+@if (ordinnary)
+{
+    <div class="modal" style="overflow: hidden;">
+        <div class="flex gap-">
+            <div class="column--" style="width: 350px;padding-left:30px">
+                <img height="350px" src="media/ordinary_chest.png" alt="">
+                      <div class="dt row-sb" style="width: 100%;margin-bottom:-0px">
+                    <div>Ordinnary Chest</div>
+                    <p style="font-size: 12px !important;">32 left</p>
+                </div>
+            </div>
+            <div class="column" style="padding: 20px 30px; width:650px">
+                <h1 style="margin-left:40px; font-size:1.35rem">Rewards to earn</h1>
+                <div class="wrap gap--" style="transform:scale(0.8);">
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/xp.svg" alt="">
+                        <div>Experiences</div>
+                        <p>10xp - 500xp</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/ftm.svg" alt="">
+                        <div> Fantom Tokens </div>
+                        <p>5 FTM - 1000 FTM</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/tori.jpg" alt="">
+                        <div> Yokai NFTs </div>
+                        <p> 0,5%</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/cloud_1.png" alt="">
+                        <div> Cosmetics</div>
+                        <p> Profile Items</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="60" src="media/more.svg" alt="">
+                        <div>More to come</div>
+                        <p> </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-bg" @onclick="closeContent">
+           
+    </div>
+
+}
+@if (surprising)
+{
+    <div class="modal" style="overflow: hidden;">
+        <div class="flex gap-">
+            <div class="column--" style="width: 350px;padding-left:30px">
+                <img height="350px" src="media/surprising_chest.png" alt="">
+                     <div class="dt row-sb" style="width: 100%;margin-bottom:-0px">
+                    <div>Surprising Chest</div>
+                    <p style="font-size: 12px !important;">32 left</p>
+                </div>
+
+            </div>
+
+            <div class="column" style="padding: 20px 30px; width:650px">
+                <h1 style="margin-bottom: 20px; font-size:1.4rem">Rewards to earn</h1>
+                <div class="wrap gap--">
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/xp.svg" alt="">
+                        <div>Experiences</div>
+                        <p>10xp - 500xp</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/ftm.svg" alt="">
+                        <div> Fantom Tokens </div>
+                        <p>15 FTM - 1000 FTM</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/tori.jpg" alt="">
+                        <div> Yokai NFTs </div>
+                        <p> 1,5% chances</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/cloud_1.png" alt="">
+                        <div> Cosmetics</div>
+                        <p> Profile Items</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="60" src="media/more.svg" alt="">
+                        <div>More to come</div>
+                        <p> </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+       <div class="modal-bg" @onclick="closeContent">
+                   @* <ModalBackgroundLines/> *@
+    </div>
+
+}
+@if (unusual)
+{
+    <div class="modal" style="overflow: hidden;">
+        <div class="flex gap-">
+            <div class="column--" style="width: 350px;padding-left:48px">
+                <img height="350px" src="media/unusual_chest.png" alt="">
+                <div class="dt row-sb" style="width: 100%;margin-bottom:-0px">
+                    <div>Unusual Chest</div>
+                    <p style="font-size: 12px !important;">32 left</p>
+                </div>
+
+            </div>
+
+            <div class="column" style="padding: 20px 30px; width:650px">
+                <h1 style="margin-bottom: 20px; font-size:1.4rem">Rewards to earn</h1>
+                <div class="wrap gap--">
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/xp.svg" alt="">
+                        <div>Experiences</div>
+                        <p>10xp - 500xp</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/ftm.svg" alt="">
+                        <div> Fantom Tokens </div>
+                        <p>10 FTM - 1000 FTM</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/tori.jpg" alt="">
+                        <div> Yokai NFTs </div>
+                        <p> 1%</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/cloud_1.png" alt="">
+                        <div> Cosmetics</div>
+                        <p> Profile Items</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="60" src="media/more.svg" alt="">
+                        <div>More to come</div>
+                        <p> </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+       <div class="modal-bg" @onclick="closeContent">
+             
+    </div>
+
+}
+
+@if (impressive)
+{
+    <div class="modal" style="overflow: hidden;">
+        <div class="flex gap-">
+            <div class="column--" style="width: 350px;padding-left:30px">
+                <img height="350px" src="media/impressive_chest.png" alt="">
+                  <div class="dt row-sb" style="width: 100%;margin-bottom:-0px">
+                    <div>Impressive Chest</div>
+                    <p style="font-size: 12px !important;">32 left</p>
+                </div>
+
+            </div>
+
+            <div class="column" style="padding: 20px 30px; width:650px">
+                <h1 style="margin-bottom: 20px; font-size:1.4rem">Rewards to earn</h1>
+                <div class="wrap gap--">
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/xp.svg" alt="">
+                        <div>Experiences</div>
+                        <p>100xp - 1000xp</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/ftm.svg" alt="">
+                        <div> Fantom Tokens </div>
+                        <p>30 FTM - 1000 FTM</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/tori.jpg" alt="">
+                        <div> Yokai NFTs </div>
+                        <p> 2%</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/cloud_1.png" alt="">
+                        <div> Cosmetics</div>
+                        <p> Profile Items</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="60" src="media/more.svg" alt="">
+                        <div>More to come</div>
+                        <p> </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-bg" @onclick="closeContent"></div>
+}
+@if (bloody)
+{
+    <div class="modal" style="overflow: hidden;">
+        <div class="flex gap-">
+            <div class="column--" style="width: 350px;padding-left:30px">
+                <img height="350px" src="media/bloody_chest.png" alt="">
+                 <div class="dt row-sb" style="width: 100%;margin-bottom:-0px">
+                    <div>Bloody Chest</div>
+                    <p style="font-size: 12px !important;">32 left</p>
+                </div>
+
+            </div>
+
+            <div class="column" style="padding: 20px 30px; width:650px">
+                <h1 style="margin-bottom: 20px; font-size:1.4rem">Rewards to earn</h1>
+                <div class="wrap gap--">
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/xp.svg" alt="">
+                        <div>Experiences</div>
+                        <p>100xp - 1000xp</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/ftm.svg" alt="">
+                        <div> Fantom Tokens </div>
+                        <p>60 FTM - 1000 FTM</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/tori.jpg" alt="">
+                        <div> Yokai NFTs </div>
+                        <p> 3%</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/cloud_1.png" alt="">
+                        <div> Cosmetics</div>
+                        <p> Profile Items</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="60" src="media/more.svg" alt="">
+                        <div>More to come</div>
+                        <p> </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-bg" @onclick="closeContent"></div>
+}
+@if (phenomenal)
+{
+    <div class="modal" style="overflow: hidden;">
+        <div class="flex gap-">
+            <div class="column--" style="width: 350px;padding-left:30px">
+                <img height="350px" src="media/phenomenal_chest.png" alt="">
+                 <div class="dt row-sb" style="width: 100%;margin-bottom:-0px">
+                    <div>Phenomenal Chest</div>
+                    <p style="font-size: 12px !important;">32 left</p>
+                </div>
+
+            </div>
+
+            <div class="column" style="padding: 20px 30px; width:650px">
+                <h1 style="margin-bottom: 20px; font-size:1.4rem">Rewards to earn</h1>
+                <div class="wrap gap--">
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/xp.svg" alt="">
+                        <div>Experiences</div>
+                        <p>100xp - 1000xp</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/ftm.svg" alt="">
+                        <div> Fantom Tokens </div>
+                        <p>120 FTM - 1000 FTM</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/tori.jpg" alt="">
+                        <div> Yokai NFTs </div>
+                        <p> 6%</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/cloud_1.png" alt="">
+                        <div> Cosmetics</div>
+                        <p> Profile Items</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="60" src="media/more.svg" alt="">
+                        <div>More to come</div>
+                        <p> </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-bg" @onclick="closeContent"></div>
+}
+@if (artistic)
+{
+    <div class="modal" style="overflow: hidden;">
+        <div class="flex gap-">
+            <div class="column--" style="width: 350px;padding-left:30px">
+                <img height="350px" src="media/artistic_chest.png" alt="">
+                <div class="row-sb" style="width: 100%;margin-top:10px">
+                    <div>Artistic Chest</div>
+                    <p>Remaining : 32</p>
+                </div>
+
+            </div>
+
+            <div class="column" style="padding: 20px 30px; width:650px">
+                <h1 style="margin-bottom: 20px; font-size:1.4rem">Rewards to earn</h1>
+                <div class="wrap gap--">
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/xp.svg" alt="">
+                        <div>Experiences</div>
+                        <p>500xp - 2000xp</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/ftm.svg" alt="">
+                        <div> Fantom Tokens </div>
+                        <p> 240 FTM - 1000 FTM</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/tori.jpg" alt="">
+                        <div> Yokai NFTs </div>
+                        <p> 12%</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/cloud_1.png" alt="">
+                        <div> Cosmetics</div>
+                        <p> Profile Items</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="60" src="media/more.svg" alt="">
+                        <div>More to come</div>
+                        <p> </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-bg" @onclick="closeContent"></div>
+}
+@if (unreal)
+{
+    <div class="modal" style="overflow: hidden;">
+        <div class="flex gap-">
+            <div class="column--" style="width: 350px;padding-left:30px">
+                <img height="350px" src="media/unreal_chest.png" alt="">
+                <div class="row-sb" style="width: 100%;margin-top:10px">
+                    <div>Unreal Chest</div>
+                    <p>Remaining : 32</p>
+                </div>
+
+            </div>
+
+            <div class="column" style="padding: 20px 30px; width:650px">
+                <h1 style="margin-bottom: 20px; font-size:1.4rem">Rewards to earn</h1>
+                <div class="wrap gap--">
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/xp.svg" alt="">
+                        <div>Experiences</div>
+                        <p>1000xp - 3000xp</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/ftm.svg" alt="">
+                        <div> Fantom Tokens </div>
+                        <p>470 FTM - 1000 FTM</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/tori.jpg" alt="">
+                        <div> Yokai NFTs </div>
+                        <p> 24%</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="70" src="media/cloud_1.png" alt="">
+                        <div> Cosmetics</div>
+                        <p> Profile Items</p>
+                    </div>
+                    <div class="chest-content team-card column">
+                        <img style="margin-bottom: 10px;" height="60" src="media/more.svg" alt="">
+                        <div>More to come</div>
+                        <p> </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-bg" @onclick="closeContent"></div>
+}
+
+@code {
+    private bool ordinnary = false;
+    private bool unusual = false;
+    private bool surprising = false;
+    private bool impressive = false;
+    private bool bloody = false;
+    private bool phenomenal = false;
+    private bool artistic = false;
+    private bool unreal = false;
+    private void seeOrdinnary() => ordinnary = true;
+    private void seeUnusual() => unusual = true;
+    private void seeSurprising() => surprising = true;
+    private void seeImpressive() => impressive = true;
+    private void seeBloody() => bloody = true;
+    private void seeArtistic() => artistic = true;
+    private void seeUnreal() => unreal = true;
+    private void seePhenomenal() => phenomenal = true;
+
+    [Parameter]
+    public int[]? chestState { get; set; }
+
+    private void closeContent()
+    {
+        ordinnary = false;
+        unusual = false;
+        surprising = false;
+        impressive = false;
+        bloody = false;
+        phenomenal = false;
+        artistic = false;
+        unreal = false;
+    }
+}

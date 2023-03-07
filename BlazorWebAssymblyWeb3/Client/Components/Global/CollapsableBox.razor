@@ -1,0 +1,34 @@
+
+
+<div>
+        <div class="faq row gap  cursor" @onclick="ToggleText"> <img height="24" src="@src" alt=""> 
+        @Name
+        </div>
+        <div style="overflow: hidden;" >
+            <div class=" @(TextHidden?"t-hide":"t-show")" >
+                <div style="padding: 10px;">
+                  @ChildContent
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+@code {
+    
+    private bool TextHidden = false;
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string Name { get; set; }
+
+    [Parameter]
+    public string src { get; set; }
+    
+    private void ToggleText()
+    {
+        TextHidden = !TextHidden;
+        StateHasChanged();
+    }
+}

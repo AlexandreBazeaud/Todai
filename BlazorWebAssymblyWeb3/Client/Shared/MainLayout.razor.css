@@ -1,0 +1,18 @@
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    margin-top: 60px;
+    position:relative;
+    width:100%;
+ 
+}
+
+
+button:hover {
+    cursor: pointer;
+}
+

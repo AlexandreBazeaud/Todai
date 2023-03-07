@@ -1,0 +1,30 @@
+@inject IJSRuntime _jsRuntime;
+
+<style>
+
+    .scroll-top-btn{
+      position: fixed;
+      bottom: 20px;
+      right: 40px;
+      background: #ffffff12;
+      backdrop-filter: blur(3px);
+      height: 50px;
+      width: 50px;
+      border-radius: 50px;
+      z-index: 100;
+    }
+    .scroll-top-btn:hover{
+         background: #ffffff30;
+        transform: scale(1.1);
+    }
+
+</style>
+
+
+<div class="scroll-top-btn cursor row--" >
+   <img src="media/arrow_up.svg" alt="">
+</div>
+
+@code{
+
+}

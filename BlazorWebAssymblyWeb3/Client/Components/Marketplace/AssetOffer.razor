@@ -1,0 +1,67 @@
+﻿@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Server
+
+@inject StateContainer _stateContainer;
+
+<style>
+    .lt-price{
+ width: 170px !important;
+ text-align: left !important;
+}
+.listings >.row{
+  border-bottom: 1px solid rgba(255, 255, 255, 0.068);
+  padding-bottom: 10px;
+}
+.listings >.row >div{
+  width: 120px;
+  text-align: right;
+  
+}
+
+</style>
+<div class="row gap">
+    <div class="lt-price row gap">
+        <img height="26" src="media/ftm_dark.svg" alt="fantom"> <span class="bold" style="font-size: 18px; ">@Offer.Price</span>
+        <p style="margin-bottom:-6px; font-size:13px;">FTM</p>
+    </div>
+    <div style="opacity: 0.7;"> $@string.Format("{0:N2}",_stateContainer.FantomPrice * Offer.PriceInt) </div>
+    <div style="opacity: 0.7;"> 30% below</div>
+    <div style="opacity: 0.7;"> in @((Offer.ExpirationDate - DateTime.UtcNow).Days) days</div>
+    <div class="bold a-link" style="color: #9321E0;"> @YokaiPatcher.ShortenAddress(Offer.seaportOrder?.offerer)</div>
+    <div class="row gap" style="width:90px;justify-content: flex-end;">
+        @if (IsOwner)
+        {
+            <div class="row gap">
+                <div style="height: 25px; font-size:14px" class="button-edit" @onclick="checkOffer">See offer</div>
+
+        </div>
+        }
+        else{
+            <img height="21" src="media/Todai_logo.png">
+        }
+    </div>
+</div>
+@if (checking)
+{
+    <ReceivedOffer NFT="NFT" Offer="Offer" OnClose="closeCheck" />
+}
+@code {
+    [Parameter]
+    public OfferListed Offer { get; set; }
+
+    [Parameter]
+    public Yokai NFT { get; set; }
+
+    [Parameter]
+    public bool IsOwner { get; set; }
+
+    private bool checking;
+
+    private void checkOffer() => checking = true;
+    private async Task closeCheck() 
+    {
+        checking = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

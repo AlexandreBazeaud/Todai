@@ -1,0 +1,311 @@
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Server
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using Newtonsoft.Json
+@using System.Numerics
+
+@inject IJSRuntime _jsRuntime;
+@inject StateContainer _stateContainer;
+@inject HttpClient _httpClient;
+@inject AlertMessageService _alertMessageService;
+<div class="modal market-orders column gap--" style="@(isTransferingWftm ? "display:none;":"")">
+    <div class="row-sb">  <h2>Make an Offer</h2> <div class="row">
+        @* <p class="a-link"> Only in wFTM </p> *@
+            <button class="button-edit" style="transform:scale(0.7);margin-right:-12px" @onclick="wrapFTM">get wFTM</button>
+        </div></div> 
+    <div class="token-balance row-sb" style="width: 100%;">
+        <div class="row gap">
+            <img height="35" src="media/wftm.svg" alt="">
+            <div class="column" style="margin-top: -5px;">
+                <div class="row" style="gap:2px">
+                 @YokaiPatcher.ShortenAddress(_stateContainer.CurrentConnectedAddress)
+                 <div class="connected-tag row--" style="margin-left: 4px;">Connected</div>
+                </div>
+                <p>Balance</p>
+            </div>
+        </div>
+        <div class="column">
+            <div class="row gap-c"> <img height="14" src="media/wftm.svg" alt="">@balance </div>
+            <p style="text-align: right; font-size:12px"> $ @priceBalance</p>
+        </div>
+
+
+       @* <p></p>  <p>You don't have any wFTM</p> <p></p> *@
+
+    </div>
+    <div class="column" style="font-size: 0.96rem; padding:0px 4px">
+        @if (AssetListed != null)
+        {
+            <div class="row-sb">
+                <p>Listed price</p>
+                <div class="row" style="gap: 2px;">
+                    <p style="font-size: 13px; margin-bottom:-3px">$ @priceDollarAsset &nbsp; </p>@AssetListed.Price FTM
+                </div>
+            </div>
+        }
+        @*<div class="row-sb">
+            <p>Highest Bid</p>
+            <div class="row" style="gap: 2px;">
+                <p style="font-size: 13px; margin-bottom:-3px">$ 299 =</p>180 FTM
+            </div>
+        </div>*@
+        @if (bestOffer != null)
+        {
+            <div class="row-sb">
+                <p>Best Offer</p>
+            <div class="row" style="gap: 2px;">
+
+                <p style="font-size: 13px; margin-bottom:-3px">$ @priceBestoffer &nbsp;</p>
+               <div class="row gap-c"> <img src="media/wftm.svg" height="14" alt="">  @bestOffer.PriceInt</div>
+            </div>
+        </div>
+        }
+        <div class="row-sb">
+            <p>Floor Price</p>
+            <div class="row" style="gap: 2px;">
+                <p style="font-size: 13px; margin-bottom:-3px">$ 11&nbsp; </p>
+                <div class="row gap-c"> <img src="media/ftm.svg" height="14" alt="">  18</div>
+            </div>
+        </div>
+        @if (royaltyData != null)
+        {
+            <div class="row-sb">
+                <p>Artist Royalty</p>
+                <div class="row" style="gap: 2px;">
+                    <p style="font-size: 13px; margin-bottom:-3px">$ @(string.IsNullOrWhiteSpace(royaltyFeeText)?"0":royaltyFeeText) &nbsp;</p>
+                    <div class="row gap-c"> <img src="media/ftm.svg" height="14" alt="">  @royaltyData.Royalty%</div>
+                </div>
+            </div>
+        }
+    </div>
+    <span style="margin-bottom: 2px;"></span>
+    <div class="input-price row-sb gap-" style="margin-top: 2px;">
+        <div>My Offer</div>
+        <div class="row gap">
+            <input type="text" placeholder="0.0" @oninput="inputPrice" />
+            <div style="font-size: 0.9rem;">wFTM</div>
+        </div>
+    </div>
+    <div class="" style="margin-bottom:0;">
+        <p style="text-align: center; font-size:12px"> You want to offer <i>@price wFTM</i> for <i> @NFT.Data!.name</i>
+            <img height="13" src="media/whitelisted.svg" alt=""></p>
+    </div>
+    @if (isApproved)
+    {
+        @if (isTransactionRunning)
+        {
+            <button class="main-button main-btn-load row gap" disabled style="padding-right: 26px;">
+                <img height="26" src="media/loader.svg"> Create Offer
+            </button>
+        }
+        else if (isDone)
+        {
+            <button class="main-button" @onclick="exitConfirm">Continue</button>
+        }
+        else if (balance < (price ?? 0))
+        {
+            <button class="main-button main-btn-load" disabled>Insufficient balance</button>
+        }
+        else
+        {
+            <button class="main-button @(wrongInputValue?"main-btn-load":"")" @onclick="ListOfferAsync">Create Offer</button>
+        }
+    }
+    else
+    {
+        @if (isTransactionRunning)
+        {
+            <button class="main-button main-btn-load row gap" disabled style="padding-right: 26px;">
+                <img height="26" src="media/loader.svg"> Approve
+            </button>
+        }
+        else
+        {
+            <button class="main-button" @onclick="ApproveMarketplaceAsync">Approve</button>
+        }
+    }
+    
+</div>
+<div class="modal-bg" @onclick="exitConfirm"></div>
+@if (confirming)
+{
+    <Confirmation Display="confirming" Confirm="exitConfirm" Stay="exitStay" />
+}
+@if(isTransferingWftm)
+{
+    <WrapFTM Close="closeWrapFTM"/>
+}
+@code {
+
+    [Parameter]
+    public Yokai NFT { get; set; }
+
+    [Parameter]
+    public AssetListing? AssetListed { get; set; }
+
+    [Parameter]
+    public EventCallback<OfferListed?> Close { get; set; }
+
+    private double? price = null;
+    private DateTimeOffset time;
+    private bool isApproved;
+    private bool isTransactionRunning = false;
+    private bool confirming;
+    private bool isDone;
+    private bool isTransferingWftm;
+    private bool wrongInputValue;
+
+    private double balance;
+    private string priceDollarAsset;
+    private string priceBalance;
+    private string priceBestoffer;
+    private RoyaltyData royaltyData;
+    private OfferListed? bestOffer;
+    private OfferListed? newOffer;
+
+    private void confirmClose() 
+    {
+        @if(!isTransactionRunning)
+            confirming = true;
+    }
+    private async Task exitStay() => confirming = false;
+    private async Task exitConfirm()
+    {
+        if(isTransactionRunning)
+            return;
+        confirming = false;
+        await Close.InvokeAsync(newOffer);
+        //await OnOfferCreated.InvokeAsync(false);
+    }
+    private void wrapFTM() => isTransferingWftm = true;
+    private async Task closeWrapFTM() 
+    {
+        await UpdateBalance();
+        isTransferingWftm = false;
+    }
+
+    private async Task inputPrice(ChangeEventArgs newPrice)
+    {
+        if (newPrice?.Value is null) return;
+        if (!double.TryParse(newPrice.Value.ToString(), out var parsedPrice))
+        {
+            wrongInputValue = true;
+            return;
+        }
+
+        wrongInputValue = false;
+        price = parsedPrice;
+        if (price != null && royaltyData.Royalty != null)
+            royaltyFeeText = string.Format("{0:N2}", (price * (royaltyData.Royalty / 100d)) * _stateContainer.FantomPrice);
+
+    }
+
+    private async Task UpdateBalance()
+    {
+        var hexPrice = await _jsRuntime.InvokeAsync<string>("RecoverLib.GetWFTMBalance");
+        var parsableHex = $"0{hexPrice.Substring(2)}";
+        var weiBalance = BigInteger.Parse(parsableHex, System.Globalization.NumberStyles.AllowHexSpecifier);
+        balance = (double)(weiBalance / 1000000000000000000);
+        //price = 0;
+        if (AssetListed != null)
+            priceDollarAsset = string.Format("{0:N2}", double.Parse(AssetListed.Price) * _stateContainer.FantomPrice);
+
+        priceBalance = string.Format("{0:N2}", (double)balance * _stateContainer.FantomPrice);
+    }
+
+    private string royaltyFeeText;
+    protected override async Task OnInitializedAsync() 
+    {
+        royaltyData = await _httpClient.GetFromJsonAsync<RoyaltyData>($"Collection/GetRoyalty?collectionAddress={NFT.ContractAddress}");
+        if (royaltyData is null)
+            royaltyData = new RoyaltyData(0, "");
+        bestOffer = await _httpClient.GetFromJsonAsync<OfferListed>($"Marketplace/GetBestOffer?TokenId={NFT.TokenId}&CollectionAddress={NFT.ContractAddress}");
+        if (bestOffer != null)
+            priceBestoffer = string.Format("{0:N2}", bestOffer.PriceInt * _stateContainer.FantomPrice);
+
+        royaltyFeeText = string.Format("{0:N2}", (price * (royaltyData.Royalty / 100d)) * _stateContainer.FantomPrice);
+        await UpdateBalance(); 
+    }
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        //WFTM => new method to handle amount
+        isApproved = await _jsRuntime.InvokeAsync<bool>("RecoverLib.IsWFTMApprovedForMarketplace");
+        //Console.WriteLine($"{isApproved}");
+        durationChange(4);
+    }
+
+    public async Task ApproveMarketplaceAsync()
+    {
+        var reference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.ApproveWFTMForMarketplace", reference);
+    }
+
+    public async Task ListOfferAsync()
+    {
+        var reference = DotNetObjectReference.Create(this);
+        var orderJson = await _jsRuntime.InvokeAsync<string>("RecoverLib.createOfferFor", NFT.ContractAddress, NFT.TokenId, _stateContainer.CurrentConnectedAddress, price.ToString(), time.ToUnixTimeSeconds(), reference);
+    }
+
+    private SeaportOrder order;
+    [JSInvokable]
+    public void WaitingTransaction(string? pOrderJson)
+    {
+        if (!string.IsNullOrWhiteSpace(pOrderJson) && !pOrderJson.Equals("Approve", StringComparison.InvariantCultureIgnoreCase))
+        {
+            //Console.WriteLine(pOrderJson);
+            order = JsonConvert.DeserializeObject<SeaportOrder>(pOrderJson);
+        }
+
+        isTransactionRunning = true;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task TransactionDone(bool pIsSucess, string pError = "")
+    {
+        isDone = true;
+        isTransactionRunning = false;
+        if (pIsSucess)
+        {
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Your offer has been listed");
+            var result = await _httpClient.PostAsJsonAsync("Marketplace/ValidateOrderOffer", order);
+            if(result.IsSuccessStatusCode)
+                newOffer = await result.Content.ReadFromJsonAsync<OfferListed>();
+        }
+        else
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+    }
+
+    [JSInvokable]
+    public async Task ApproveResult(bool pIsSuccess, string pError = "")
+    {
+        isApproved = pIsSuccess;
+        isTransactionRunning = false;
+        await InvokeAsync(StateHasChanged);
+        if (!pIsSuccess)
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+    }
+
+    private void durationChange(int pValue)
+    {
+        switch (pValue)
+        {
+            case 1:
+                time = DateTime.UtcNow.AddHours(24);
+                break;
+            case 2:
+                time = DateTime.UtcNow.AddDays(7);
+                break;
+            case 3:
+                time = DateTime.UtcNow.AddDays(14);
+                break;
+            case 4:
+                time = DateTime.UtcNow.AddDays(28);
+                break;
+        }
+    }
+}

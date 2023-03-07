@@ -1,0 +1,75 @@
+﻿@using MetaMask.Blazor
+@using MetaMask.Blazor.Enums
+@using MetaMask.Blazor.Exceptions
+@using System.Reflection.Metadata
+@using BlazorWebAssymblyWeb3.Client.Data
+@using Constant = BlazorWebAssymblyWeb3.Client.Data.Constant
+@inject MetaMaskService metaMaskService;
+@inject NavigationManager uriHelper;
+@inject IJSRuntime _jsRuntime;
+
+@if (!isConnected)
+{
+    <button class="main-button @Class" style="@Style" @onclick="ConnectMetaMaskAsync"> Connect Wallet</button>
+}
+else if (currentChainId != ChainId)
+{
+    <button class="main-button @Class" style="@Style" @onclick="SwitchToAsync"> Switch to @chainData.Name</button>
+}
+
+@code {
+    [Parameter]
+    public int ChainId { get; set; }
+
+    [Parameter]
+    public string Style { get; set; }
+
+    [Parameter]
+    public string Class { get; set; }
+
+    private bool hasMetamask;
+    private bool isConnected;
+    private long currentChainId;
+
+    private ChainData chainData;
+
+    private record struct switchToPayload(string chainId);
+    private async Task SwitchToAsync()
+    {
+        await metaMaskService.GenericRpc("wallet_switchEthereumChain", new {chainId="0xFA"});
+    }
+
+    private async Task ConnectMetaMaskAsync()
+    {
+        if (!hasMetamask) return;
+        isConnected = await metaMaskService.IsSiteConnected();
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("RecoverLib.requestPermissions");
+            //await metaMaskService.ConnectMetaMask();
+        }
+        catch (UserDeniedException)
+        {
+            Console.WriteLine("Canceling connection");
+        }
+        
+    }
+    // private Task MetaMaskServiceOnAccountChangedEvent(string arg)
+    // {
+    //     uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+    //     Console.WriteLine(arg);
+    //     return Task.CompletedTask;
+    // }
+    protected override async Task OnInitializedAsync()
+    {
+        
+        hasMetamask = await metaMaskService.HasMetaMask();
+        isConnected = await metaMaskService.IsSiteConnected();
+        chainData = Constant.HandledChains[ChainId];
+        if(isConnected)
+            (currentChainId, Chain chain) = await metaMaskService.GetSelectedChain();
+        //MetaMaskService.AccountChangedEvent += MetaMaskServiceOnAccountChangedEvent;
+        await metaMaskService.ListenToEvents();
+        
+    }
+}

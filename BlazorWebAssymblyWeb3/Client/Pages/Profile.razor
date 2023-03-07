@@ -1,0 +1,1021 @@
+﻿@page "/profile/{UserAddress}/{Menu:int?}"
+@using BlazorWebAssymblyWeb3.Server
+@using BlazorWebAssymblyWeb3.Shared
+@using MetaMask.Blazor
+@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Client.Components
+@using BlazorWebAssymblyWeb3.Client.Components.Marketplace
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using MetaMask.Blazor.Enums
+@using static BlazorWebAssymblyWeb3.Client.Components.Marketplace.Wallet
+
+@inject HttpClient _http
+@inject MetaMaskService _metaMaskService;
+@inject NavigationManager _navManager
+@inject IJSRuntime _jsRuntime;
+@inject Helper _helper;
+@inject SessionStorageService _storageService;
+
+<PageTitle>Profile | Todai</PageTitle>
+<style>
+    .navbar {
+        box-shadow: unset;
+        background: !important;
+    }
+
+    main {
+        margin-top: -60px !important;
+        padding-top: 120px;
+        background: linear-gradient(0.39deg, #35233F 0.4%, #181729 66.87%, rgba(24, 23, 41, 0.2) 99.73%);
+    }
+</style>
+
+<div class="nav-bg"></div>
+<div class="collector-profile">
+    @* <img class="profile-bg" src="media/profile_default_bg.png" alt="profile background"> *@
+    <div class="profile-header row-sb gap">
+
+        <div class="header-left row gap--">
+            <div class="profile-pic ">
+                @if (isHisProfile)
+                {
+                    <span class="edit-hover row--" @onclick="() => ChoosingPFP = true">
+                        <img class="edit-icon" style="height:25px;" src="media/edit_icon.svg" alt="">
+                    </span>
+                }
+
+                <img height="100" src="@(profilePicture?.Data?.image ?? "media/profile_default.png")" alt="profile-picture" />
+            </div>
+            <div class="column" style="margin-top: -6px;">
+                <div class="row-sb">
+                    <h1 class="pseudo text-sdw row gap">
+                    
+                        @(string.IsNullOrWhiteSpace(profile?.Name) ? YokaiPatcher.ShortenAddress(UserAddress) : profile.Name)
+                
+                        @if (string.IsNullOrWhiteSpace(profile?.Name) && isHisProfile)
+                        {
+                            <div class="tooltip-c">
+                                <img height="20" src="media/warning.svg" alt="warning" />
+                                <div class="tooltip-r">
+                                    Setup a name <br> to activate your account
+                                </div>
+                            </div>
+                        }
+                           
+                    </h1>
+     <div class="profile-lvl">  <i>lvl.</i> @profile?.Level</div>
+                </div>
+                <div class="column " style="opacity: 0.7; font-size:0.96rem;">
+                    <div class="row">
+                        <div class=" tooltip-c" style="width: min-content;">
+                            <div class="profile-xp">
+                                <span class="progress-xp default-xp" style="width: @($"{(profile?.AllExp % 1000)/10}%");"> </span>
+
+                            </div>
+                            <div class="tooltip-r" style="left:104%; bottom:20%">
+                                @(profile?.AllExp%1000)/1000 XP
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row gap">
+                        <div class="tooltip-c">
+                            <p class="row-- gap ">
+                                <img height="20" src="media/yokai_nft.svg" alt="">@yokaiCount
+                            </p>
+                            <div class="tooltip">
+                                Yokai's
+                            </div>
+                        </div>
+                        @* <p class="row-- ">14 Watchers</p> *@
+                        <div class="tooltip-c">
+                            <p class="row-- gap"> <img height="23" src="media/yokai_like.svg" alt=""> 0 </p>
+                            <div class="tooltip">
+                                Seals
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="header-right">
+            <div id="wallet-stat" class="column-center">
+                <div class="stat-container ">
+                    @* <div class="stat column-center">
+                    <span > Market Cap.</span>
+                    <p>$ ---</p>
+                    </div> *@
+                    <div class="stat column-center">
+                        <span>Collected NFTs</span>
+                        <p>@(collectionBalances == null ? "---" : collectionBalances.Sum(x => x.Balance))</p>
+                    </div>
+                    <div class="stat column-center">
+                        <span>Collections</span>
+                        <p>@(collectionBalances == null ? "---" : collectionBalances.Count(x => x.Balance > 0))</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="profile-menu row-sb">
+        <div class=" row">
+            <button class="menu-btn @(ChosenMenu == 1 ? "selected" : "")" @onclick="() => ChangeMenu(1)" style="margin-left: -30px;"> Home</button>
+            <button class="menu-btn @(ChosenMenu == 2 ? "selected" : "")" @onclick="() => ChangeMenu(2)"> Gallery</button>
+            <button class="menu-btn @(ChosenMenu == 3 ? "selected" : "")" @onclick="() => ChangeMenu(3)"> Favorites</button>
+            <button class="menu-btn @(ChosenMenu == 4 ? "selected" : "")" @onclick="() => ChangeMenu(4)"> About</button>
+            <button class="menu-btn @(ChosenMenu == 5 ? "selected" : "")" @onclick="() => ChangeMenu(5)"> Offers</button>
+        </div>
+
+        <div class="row gap--" style="height: 100%;">
+
+            @* <button class="btn-x cursor">
+            <img height="20px" src="media/share.svg" alt="giveaway">
+            </button> *@
+            @if (profile != null && !isHisProfile && !string.IsNullOrWhiteSpace(connectedAddress))
+            {
+                @*<button class="btn-x cursor">
+                    <img height="20" src="media/present.svg" alt="giveaway">
+                </button>*@
+                @if (profile.ProfileIdFollowings != null)
+                {
+                    @if (profile.Name != null)
+                    {
+                        @if (!profile.ProfileIdFollowings.Any(x => x.Address.Equals(connectedAddress, StringComparison.InvariantCultureIgnoreCase)))
+                        {
+                            <button class="btn-x watch-btn" onclick="@Follow">+ WATCH</button>
+                        }
+                        else
+                        {
+                            <button class="btn-x watch-btn watch-" style="opacity: 0.4; width:135px" onclick="@Unfollow"> <span class="watch-check">✓</span> <span class="watch-undo">✘</span> WATCHING</button>
+                        }
+                    }
+                }
+            }
+
+        </div>
+    </div>
+
+    <div class="profile-main column">
+        <div class="profile-content-bg"></div>
+
+        <img class="custom-bg" src="media/cloud_1.webp" alt="" style="position: fixed; height:200px; right:2%; top:700px; opacity:0.6;">
+        <img class="custom-bg" src="media/clouds_1.webp" alt="" style="position: fixed; height:400px; left:2%; top:360px; opacity:0.6;">
+
+        @if (ChosenMenu == 1)
+        {
+            <div class="profile-home">
+                <section class="home-left column">
+                    <div class="profile-widget spotlight">
+                        @* <h2>NFT Spotlight </h2> *@
+                        @* <img src="media/default_pp.png" alt=""> *@
+                    </div>
+                    <div class="profile-widget">
+                        <div class="column">
+                            <div class="row gap">
+                                <h2>Watchers</h2>
+                                <div class="dt"> @(profile?.ProfileIdFollowings?.Count ?? 0)</div>
+                            </div>
+                            <div class="wrap gap">
+                                @if (profile?.ProfileIdFollowings?.Count > 0)
+                                {
+                                    @foreach (var follower in profile.ProfileIdFollowings)
+                                    {
+                                        <a href="/profile/@follower.Address">
+                                            <div class="watcher-profile row gap"> <img height="35" src="https://todai.world/images/@follower.Nft.Collection.Address/@follower.TokenId" alt="">@YokaiPatcher.ShortenName(follower.Name) </div>
+                                        </a>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="profile-widget">
+                        <div class="column">
+                            <div class="row gap">
+                                <h2>Watching</h2>
+                                <div class="dt">@(profile?.ProfileIdFolloweds?.Count ?? 0)</div>
+                            </div>
+                            <div class="wrap gap">
+                                @if (profile?.ProfileIdFolloweds?.Count > 0)
+                                {
+                                    @foreach (var follower in profile.ProfileIdFolloweds)
+                                    {
+                                        <a href="/profile/@follower.Address">
+                                            <div class="watcher-profile row gap"> <img height="35" src="https://todai.world/images/@follower.Nft.Collection.Address/@follower.TokenId" alt="">@YokaiPatcher.ShortenName(follower.Name) </div>
+                                        </a>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section class="home-right column">
+                    <div class="about column">
+                        <div class="row gap--" style=" margin-bottom:10px;">
+                            <h2 style="font-size: 26px; text-transform: uppercase;">
+                                @(string.IsNullOrWhiteSpace(profile?.Name) ? YokaiPatcher.ShortenAddress(UserAddress) : profile.Name)
+                            </h2>
+                            <div class="tooltip-c">
+                           <p class="dt" style="margin-top:7px; cursor:pointer;" @onclick="Copy" @onmouseout="CopyOut">@YokaiPatcher.ShortenAddress(UserAddress)</p>
+                              <div class="tooltip-r" style="bottom: 0%;left: 106%;">
+                         @if (CopiedText)
+                        { <div>  Copied !</div>
+                            
+                        }
+                        else{
+                          <div>  Copy Address</div>
+                        }
+                                  
+                                 
+                              </div>
+                            </div>
+                        </div>
+                        @if (connectedAddress == UserAddress)
+                        {
+                            <button class="button-edit section-edit gap" @onclick="EditAbout">
+                                <img height="20" src="media/edit_icon.svg" alt="">
+                            </button>
+                        }
+                        <div class="wrap gap-" style="font-size: 1rem; margin-bottom:40px; max-width:94%;">
+                            @if (!string.IsNullOrWhiteSpace(profile?.Localisation))
+                            {
+                                <div class="row gap">
+                                    <img src="media/place.svg" alt="">@profile.Localisation
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(profile?.Activity))
+                            {
+                                <div class="row gap">
+                                    <img src="media/job.svg" alt="">@profile.Activity
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(profile?.Link))
+                            {
+                                <div class="row gap">
+                                    <img height="23px" src="media/link.svg" alt="">@profile.Link
+                                </div>
+                            }
+                            @if (profile?.DateOfNickname != null)
+                            {
+                                <div class="row gap"> <img src="media/todai_since.svg" alt=""> Pact for @(Math.Floor((DateTime.UtcNow - profile.DateOfNickname.Value).TotalDays)) days </div>
+                            }
+                        </div>
+                        <div class="medals row-sb">
+                            <p>MEDALS <i class="a-link" style="color: white; font-weight:300; font-size:14px;"> &nbsp 0 &nbsp</i></p>
+                            <div class="row gap" style="transform: scale(0.9);">
+                                <div class="social-item"></div>
+                                <div class="social-item"></div>
+                                <div class="social-item"></div>
+                                <div class="social-item"></div>
+                            </div>
+                        </div>
+                        <div class="media row-sb">
+                            <p>FIND ME </p>
+                            <div class="row gap" style="transform: scale(0.9);">
+
+                                @if (!string.IsNullOrWhiteSpace(profile?.InstagramNickname))
+                                {
+                                    <a href="https://www.instagram.com/@profile.InstagramNickname" target="_blank">
+                                        <div class="social-item row--">
+                                            <img src="media/instagram.svg" alt="discord icon" />
+                                        </div>
+                                    </a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(profile?.TwitterHandle))
+                                {
+                                    <a href="https://twitter.com/@@@profile.TwitterHandle" target="_blank">
+                                        <div class="social-item row--">
+                                            <img src="media/twitter.svg" alt="twitter icon" />
+                                        </div>
+                                    </a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(profile?.Link))
+                                {
+                                    <a href="@profile.Link" target="_blank">
+                                        <div class="social-item row--">
+                                            <img src="media/website.svg" alt="website icon" />
+                                        </div>
+                                    </a>
+                                }
+                                <a href="https://ftmscan.com/address/@UserAddress" target="_blank">
+                                    <div class="social-item row--">
+                                        <img src="media/etherscan.svg" alt="website icon" />
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(profile?.Bio))
+                        {
+                            <div class="mybio column">
+                                <p>BIO</p>
+                                <span>
+                                    @profile.Bio
+                                </span>
+                            </div>
+                        }
+                    </div>
+                    <div id="wallet-stat" class="column-center">
+                        <h2>Wallet Stats</h2>
+                        <div class="stat-container">
+                            <div class="stat column-center">
+                                <span>Collected NFTs</span>
+                                <p>---</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span>All NFTs</span>
+                                <p>---</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span> Collections</span>
+                                <p>---</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span> $ Value </span>
+                                <p>---</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="wallet-stat" class="column-center">
+                        <h2>Todai Stats</h2>
+                        <div class="stat-container" style="filter: blur(3px);">
+                            <div class="stat column-center">
+                                <span>Collected NFT</span>
+                                <p>---</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span>Collected NFT</span>
+                                <p>---</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span> Collected NFT</span>
+                                <p>---</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        }
+        else if (ChosenMenu == 2)
+        {
+            <style>
+                .profile-main {
+                    margin: 0 !important;
+                    max-width: unset !important;
+                }
+
+                .footer {
+                    display: none;
+                }
+
+                .collection-gallery {
+                    height: calc(100vh - 135px) !important;
+                    background: transparent !important;
+                }
+
+                .nft-list {
+                    height: 100%;
+                } 
+
+                .items-grow{
+                    max-height: calc(100vh - 60px) !important;
+                    overflow-y: unset !important;
+                }
+            </style>
+
+            @if (!isFantom)
+            {
+                <div style="height:100vh;">
+                    <ConnectButton Style="margin:auto; margin-top:20px;" Class="row--" ChainId="250" />
+                </div>
+            }
+            else
+            {
+                <Wallet IsModal="false" UserAddress="@UserAddress" IsCurrentConnectedProfile="isConnectedProfile" OnNftChoice="GalleryClick" />
+            }
+        }
+        else if (ChosenMenu == 3)
+        {
+            <div style="min-height: 100vh; height:100%">
+                <h1 style="margin-top: 20px;">Assets</h1>
+                <div>
+                    @if (favorites != null)
+                    {
+                        if (favorites.Count == 0)
+                        {
+                            <div>No favorites</div>
+                        }
+                        else
+                        {
+                            <div class="nft-gallery" style="max-height:unset;">
+                                <InfiniteScrolling @ref="childFavorites" ItemsProvider="@LoadYokai" CountToLoad="20">
+                                    <ItemTemplate Context="yokai">
+                                        <Nft NFT="yokai" WithFooter="false" IsCurrentConnectedProfile="isConnectedProfile" ConnectedAddress="@connectedAddress" />
+                                    </ItemTemplate>
+                                    <LoadingTemplate>
+                                        <div class="nft-item load themed-box"></div>
+                                        <div class="nft-item load themed-box"></div>
+                                        <div class="nft-item load themed-box"></div>
+                                    </LoadingTemplate>
+                                </InfiniteScrolling>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+        else if (ChosenMenu == 4)
+        {
+            <div class="profile-content">
+                <div class="side-menu column">
+                    <div class="side-item gap">
+                        <button onclick="document.getElementById('wallet-stat').scrollIntoView({behavior:'smooth'})"
+                            class="scroll-button">
+                          STATS
+                        </button>
+                         <button onclick="document.getElementById('medals-list').scrollIntoView({behavior:'smooth'})"
+                            class="scroll-button letter-spc">
+                            MEDALS
+                        </button>    
+                    </div>
+                </div>
+                <div class="main-content">
+                    <div id="wallet-stat">
+                        <h2>Wallet Statistics</h2>
+                        <div class="stat-container">
+                            <div class="stat column-center">
+                                <span> Market Cap.</span>
+                                <p>4911$</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span>Collected NFT</span>
+                                <p>341</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span> Collected NFT</span>
+                                <p>6531</p>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div id="nft-stat">
+                        <h2>NFT Statistics</h2>
+
+                        <div class="stat-container">
+                            <div class="stat column-center">
+                                <span> All NFT</span>
+                                <p>1431</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span>Collected NFT</span>
+                                <p>341</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span> Collected NFT</span>
+                                <p>6531</p>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div id="todai-stat">
+                        <h2>Todai Statistics</h2>
+
+                        <div class="stat-container">
+                            <div class="stat column-center">
+                                <span> Transactions</span>
+                                <p>328</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span>Traded NFT</span>
+                                <p>41</p>
+                            </div>
+                            <div class="stat column-center">
+                                <span> Medals </span>
+                                <p>8</p>
+                            </div>
+                        </div>
+                    </div>
+                     <div id="medals-list">
+                        <h2>Medals</h2>
+                        <div class="wrap gap-">
+                           <div class="medal column">
+                             <img height="90" src="media/500nfts.svg" alt="medal">
+                             <div class="column- gap-c">
+                                <h1>Phenomenal Collector</h1>
+                                <p>You have colllected more than 500 assets on Todai congrats !</p>
+                             </div>
+                           </div>
+                             <div class="medal column--">
+                             <img height="90" src="media/500nfts.svg" alt="medal">
+                             <div class="column- gap-c">
+                                <h1>Phenomenal Collector</h1>
+                                <p>You have colllected more than 500 assets on Todai congrats !</p>
+                             </div>
+                           </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        }
+        else if (ChosenMenu == 5)
+        {
+            <div class="profile-content">
+                <div class="side-menu column">
+                    <div class="side-item gap">
+                        <button class="scroll-button letter-spc row gap-c">
+                           MY OFFERS <div class="dt">@offersListedOfferer?.Count</div>
+                        </button>
+                        <button class="scroll-button letter-spc row gap-c">
+                            RECEIVED OFFERS <div class="dt">@offersListedReceiver?.Count</div>
+                        </button>
+                       @* <button class="scroll-button letter-spc">
+                           SWAP
+                        </button>                 *@
+                        @* <button onclick="document.getElementById('nft-stat').scrollIntoView({behavior:'smooth'})" *@
+                        @*         class="scroll-button"> *@
+                        @*     HISTORY *@
+                        @* </button> *@
+                    </div>
+                </div>
+                <div class="main-content" style="width: 900px;">
+                    <div id="made-offers">
+                        <h2>Offers</h2>
+                        <div class="wrap gap">
+                            @if(offersListedOfferer != null)
+                            {
+                                @foreach(var offerListed in offersListedOfferer)
+                                {
+                                    <OfferItem IsOwnerConnected="false" NFT="new Yokai(offerListed.TokenId,offerListed.Collection.Address)" offerListed="offerListed" />
+                                }
+                            }
+                        </div>
+                    </div>
+                      <div id="received-offers">
+                        <h2>Received Offers</h2>
+                        <div class="wrap gap-">
+                            @if(offersListedReceiver != null)
+                            {
+                                @foreach(var offerListed in offersListedReceiver)
+                                {
+                                    <OfferItem IsOwnerConnected="true" NFT="new Yokai(offerListed.TokenId,offerListed.Collection.Address)" offerListed="offerListed" OfferDeclined="RefreshOffersAsync" />
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    @* <div id="open-swap">
+                        <h2>Swap Offers</h2>
+                        @if (swapOffers != null)
+                        {
+                            @foreach (var swapOffer in swapOffers.Where(x => x.Offerer.Equals(UserAddress, StringComparison.CurrentCultureIgnoreCase)))
+                            {
+
+                                <SwapOfferCard SwapOffer="swapOffer" CurrentAddress="@connectedAddress" IsTradable="false"></SwapOfferCard>
+                            }
+                        }
+                    </div>
+                    <div id="open-swap-">
+                        <h2>Received Swap Offers</h2>
+                        @if (swapOffers != null)
+                        {
+                            @foreach (var swapOffer in swapOffers.Where(x => !x.Offerer.Equals(UserAddress, StringComparison.CurrentCultureIgnoreCase)))
+                            {
+                                <SwapOfferCard SwapOffer="swapOffer" CurrentAddress="@connectedAddress" IsTradable="@swapOffer.TargetOwnerAddress.Equals(connectedAddress)"></SwapOfferCard>
+                            }
+                        }
+                    </div> *@
+                    @* <div id="rencent-swap"> *@
+                    @*     <h2>Swap History</h2> *@
+                    @*     <div class="card-swap "> *@
+                    @*         <div> *@
+                    @*             <div class="row-center"> *@
+                    @*                 <a *@
+                    @*                     href="https://todai.tools/asset/0x59c7b16369422959eeb218c7270e3b5132cb1f28/181" *@
+                    @*                     target="_blank"> *@
+                    @*                     <img src="media/YokaiMintLoad.svg" alt=""> *@
+                    @*                 </a> *@
+                    @*                 <img style="height: 20px; margin:5px;" src="media/swap_icon_w.svg" alt=""> *@
+                    @* *@
+                    @*                 <img src="media/YokaiMintLoad.svg" alt=""> *@
+                    @*             </div> *@
+                    @*         </div> *@
+                    @* *@
+                    @*         <div class="row gap"> *@
+                    @*             <div class="colmun" style="margin-right: 26px;"> *@
+                    @*                 <p>Bloody Yokai 2931</p> *@
+                    @*                 <a href=""> *@
+                    @*                     from *@
+                    @*                     <i class="a-link" style="color:rgba(167, 35, 255, 0.85) ;"> *@
+                    @*                         ToriFlower *@
+                    @*                     </i> *@
+                    @*                 </a> *@
+                    @*             </div> *@
+                    @*             <div class="column"> *@
+                    @*                 <p>Unreal Yokai 1021</p> *@
+                    @*                 <a href=""> to <i class="a-link" style="color:white;"> </i> </a> *@
+                    @*             </div> *@
+                    @*         </div> *@
+                    @*         <p class="row"> <img style="height: 14px;" src="media/timer_icon.svg" alt=""> 5 days ago </p> *@
+                    @*     </div> *@
+                    @* </div> *@
+                </div>
+            </div>
+        }
+        else if (ChosenMenu == 6)
+        {
+        }
+    </div>
+</div>
+<div class="modal column edit-p-h row--" style="@(!EditH ? "display: none;" : "")">
+    @* <img class="modal-exit" height="20px" src="media/close.svg" alt=""> *@
+    <div class="column-center gap-">
+        @* <h2>Edit Profile Header</h2> *@
+        <div class="column-center gap">
+            <div class="tooltip-c">
+                <div class="profile-pic " style="margin-right: 0;">
+                    <span class="edit-hover row--" @onclick="() => ChoosingPFP = true">
+                        <img class="edit-icon" style="height:25px;" src="media/edit_icon.svg" alt="">
+                    </span>
+                    <img height="100px" src="@(profilePicture?.Data?.image ?? "media/profile_default.png")" />
+                </div>
+            </div>
+            <div class="column-center gap" style="margin-top: 20px;">
+                @* <span> Username </span> *@
+                <div class="row">
+                    <input type="text" class="search-bar" placeholder=" @YokaiPatcher.ShortenAddress(UserAddress)" @bind="username" />
+                    <button class="main-button" style="height: 28px;" @onclick="EditUsername"> Edit Name </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@if (ChoosingPFP)
+{
+    <Wallet UserAddress="@connectedAddress" IsCurrentConnectedProfile="true" OnNftChoice="WalletNftChosen" />
+}
+<div class="modal-bg" style="@(!EditH ? "display: none;" : "")" @onclick="EditHeader"></div>
+<div class="modal about-edit column gap-" style="@(!EditingAbout ? "display: none;" : "")">
+    <h2 style="align-self: center;"> About Me</h2>
+    <EditForm Model="@profileEdit" OnValidSubmit="SubmitProfileEditAsync">
+        <div class="column-- gap-" style="">
+            <div class="row gap--">
+                <img src="media/place.svg" alt="">
+                <input class="search-bar" @bind="profileEdit.Localisation" type="text" placeholder="Localisation" />
+            </div>
+            <div class="row gap--">
+                <img src="media/job.svg" alt=""> <input class="search-bar" @bind="profileEdit.Activity" type="text" placeholder="Activity" />
+            </div>
+            <div class="row gap--">
+                <img src="media/link.svg" alt=""> <input class="search-bar" @bind="profileEdit.Link" type="text" placeholder="https link" />
+            </div>
+            <div class="row gap--">
+                <img src="media/twitter.svg" alt="" style="width:24px; transform:scale(0.77)"> <input class="search-bar" @bind="profileEdit.TwitterHandle" type="text" placeholder="twitter.com/" />
+            </div>
+            <div class="row gap--">
+                <img src="media/instagram.svg" alt=""> <input class="search-bar" type="text" @bind="profileEdit.InstagramNickname" placeholder="instagram.com/..." />
+            </div>
+            <div class="row gap">
+                <img src="media/link.svg" alt="" style="opacity: 0; height:32px;" /> <textarea class="search-bar" @bind="profileEdit.Bio" type="textarea" style="height: 100px;" placeholder="Bio"></textarea>
+            </div>
+        </div>
+        <div class="row--" style="margin-top: 16px;">
+            <button class="main-button row-- " style="align-self: center;"> Save </button>
+        </div>
+    </EditForm>
+</div>
+<div class="modal-bg" @onclick="EditAbout" style="@(!EditingAbout ? "display: none;" : "")"></div>
+
+@code {
+    private readonly List<string> genders = new() { "Secret", "She/Her", "He/Him" };
+
+    [Parameter]
+    public string UserAddress { get; set; }
+    [Parameter]
+    public int? Menu { get; set; }
+
+    private string connectedAddress;
+    public int ChosenMenu { get; set; } = 1;
+    InfiniteScrolling<Yokai> child;
+    InfiniteScrolling<Yokai> childFavorites;
+
+    private bool EditH { get; set; }
+    private bool ChoosingPFP;
+    private bool EditingAbout { get; set; }
+
+    private ProfileEdit profileEdit = new();
+    private bool isHisProfile;
+    private bool isFantom;
+    private List<Yokai> NFTSFiltered = new();
+    private string filters = "";
+    private bool isConnectedProfile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hasMetaMask = await _metaMaskService.HasMetaMask();
+        var isSiteConnected = await _metaMaskService.IsSiteConnected();
+        if (isSiteConnected)
+        {
+            connectedAddress = await _metaMaskService.GetSelectedAddress();
+            (long chainId, Chain chain) = await _metaMaskService.GetSelectedChain();
+            isFantom = chainId == 250;
+
+            isConnectedProfile = connectedAddress == UserAddress;
+        }
+        //await OnParametersSetAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(UserAddress) && !UserAddress.IsValidEthAddress())
+        {
+            _navManager.NavigateTo(_navManager.BaseUri, true);
+            return;
+        }
+        isConnectedProfile = connectedAddress == UserAddress;
+        profile = await _http.GetFromJsonAsync<BlazorWebAssymblyWeb3.Server.Profile>($"Profile/GetProfileOf?pAddress={UserAddress}");
+        isHisProfile = !string.IsNullOrWhiteSpace(connectedAddress) && UserAddress.ToLower() == connectedAddress.ToLower();
+
+        if (isFantom)
+            collectionBalances = await _jsRuntime.InvokeAsync<List<CollectionBalances>>("RecoverLib.GetBalanceOflistedOf", UserAddress);
+
+        var ownedYokai = collectionBalances?.FirstOrDefault(x => x.CollectionAddress.Equals(Constant.YOKAIADDRESS, StringComparison.CurrentCultureIgnoreCase));
+        yokaiCount = ownedYokai?.Balance ?? 0;
+        collectionBalancesNoEmpty = collectionBalances?.Where(x => x.Balance > 0).ToList();
+
+        if (profile?.CollectionId != null)
+        {
+            profilePicture = new Yokai(profile.TokenId!.Value, profile.Nft!.Collection.Address)
+                {
+                    Data = new YokaiData
+                    {
+                        image = $"https://todai.world/images/{profile.Nft.Collection.Address}/{profile.TokenId!.Value}"
+                    }
+                };
+        }
+        else
+            profilePicture = null;
+
+        var timeBefore = DateTime.UtcNow;
+        if (Menu != null)
+            await ChangeMenu(Menu.Value);
+        else
+            await ChangeMenu(1);
+        Console.WriteLine(DateTime.UtcNow - timeBefore);
+        //StateHasChanged();
+    }
+
+    private List<Favorite> favorites;
+    private List<CollectionBalances>? collectionBalances;
+    private List<CollectionBalances>? collectionBalancesNoEmpty;
+    private List<BlazorWebAssymblyWeb3.Server.Collection> collections;
+
+    private async Task ChangeMenu(int pId)
+    {
+        if (ChosenMenu == pId)
+            return;
+
+        if (pId == 2)
+        {
+            collections = await _http.GetFromJsonAsync<List<BlazorWebAssymblyWeb3.Server.Collection>>("Yokai/GetAllMinimalCollection");
+            NFTS = new List<Yokai>();
+            if (isFantom)
+            {
+                foreach (var collectionBalance in collectionBalancesNoEmpty)
+                {
+                    var collection = collections.First(x => x.Address.ToLower() == collectionBalance.CollectionAddress.ToLower());
+                    collectionBalance.Name = collection.Name;
+                    Console.WriteLine($"{collection.Name} => {collectionBalance.Balance}");
+                    if (collectionBalance.Balance == 0) continue;
+                    var ids = await _jsRuntime.InvokeAsync<List<int>>("RecoverLib.GetOwnedNFTIdOfCollection", collection.Address, UserAddress);
+
+                    NFTS.AddRange(ids.Select(x => new Yokai(x, collection.Address)));
+                    Loaded = new List<Yokai>();
+
+                }
+                ChosenMenu = pId;
+                if (child != null)
+                    await child.Reset(true);
+            }
+        }
+        else if (pId == 3)
+        {
+            favorites = await _http.GetFromJsonAsync<List<Favorite>>($"Profile/GetFavoritesOf?pUserAddress={UserAddress}");
+            FavoriteNFTS = new List<Yokai>();
+            foreach (var favorite in favorites)
+            {
+                //var tokenUris = await _jsRuntime.InvokeAsync<string[]>("RecoverLib.GetTokenUri", Constant.HandledChains[250].BatcherAddress, favorite.Nft.Collection.Address, new[] { favorite.TokenId });
+
+                FavoriteNFTS.Add(new Yokai(favorite.TokenId, favorite.Nft.Collection.Address));
+                LoadedFavoriteNFTS = new List<Yokai>();
+            }
+
+
+            ChosenMenu = pId;
+            if (childFavorites != null)
+                await childFavorites?.Reset(true);
+        }
+        else if (pId == 5) //offers
+        {
+            var offersListedTask = _http.GetFromJsonAsync<List<OfferListed>>($"Marketplace/GetUsersOffer?userAddress={UserAddress}");
+            var offersListed = await offersListedTask;
+            offersListedOfferer = offersListed?.Where(x => x.Offerer == UserAddress.ToLower()).ToList();
+            offersListedReceiver = offersListed?.Where(x => x.Receiver == UserAddress.ToLower()).ToList();
+        }
+        ChosenMenu = pId;
+        Menu = pId;
+        _navManager.NavigateTo($"/profile/{UserAddress}/{pId}", false);
+    }
+
+    private List<Yokai> NFTS = new();
+    private List<Yokai> FavoriteNFTS = new();
+    private List<Yokai> Loaded = new();
+    private List<Yokai> LoadedFavoriteNFTS = new();
+    private List<SwapOffer> swapOffers;
+    private List<OfferListed>? offersListedOfferer;
+    private List<OfferListed>? offersListedReceiver;
+
+    private string username;
+
+    private async Task RefreshOffersAsync()
+    {
+        var offersListed = await _http.GetFromJsonAsync<List<OfferListed>>($"Marketplace/GetUsersOffer?userAddress={UserAddress}");
+        offersListedOfferer = offersListed?.Where(x => x.Offerer == UserAddress.ToLower()).ToList();
+        offersListedReceiver = offersListed?.Where(x => x.Receiver == UserAddress.ToLower()).ToList();
+    }
+
+    private async Task Unfollow()
+    {
+        var guid = await _http.GetStringAsync("Yokai/GetGuidSignFor?pAddress=" + connectedAddress);
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+        if (!transaction.IsSuccess) return;
+        var postBody = new { pAddress = connectedAddress, pHash = transaction.Hash, pAddressToFollow = UserAddress };
+        var result = await _http.PostAsJsonAsync("Profile/Unfollow", postBody);
+        _navManager.NavigateTo(_navManager.Uri, true);
+    }
+
+    private async Task Follow()
+    {
+        var guid = await _http.GetStringAsync("Yokai/GetGuidSignFor?pAddress=" + connectedAddress);
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+        if (!transaction.IsSuccess) return;
+        var postBody = new { pAddress = connectedAddress, pHash = transaction.Hash, pAddressToFollow = UserAddress };
+        var result = await _http.PostAsJsonAsync("Profile/Follow", postBody);
+        _navManager.NavigateTo(_navManager.Uri, true);
+    }
+
+    private void EditHeader()
+    {
+        if (!EditH) //was closed
+            username = profile?.Name ?? "";
+        else
+            ChoosingPFP = false;
+        EditH = !EditH;
+
+        StateHasChanged();
+    }
+
+    private async Task EditUsername()
+    {
+        if (username != profile?.Name)
+        {
+            var guid = await _http.GetStringAsync("Yokai/GetGuidSignFor?pAddress=" + connectedAddress);
+            var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+                {
+                    contents = guid
+                });
+            if (!transaction.IsSuccess) return;
+            var result = await _http.PatchAsync($"Profile/UpdateUsername?pHash={transaction.Hash}&pAddress={connectedAddress}&pUsername={username}", null);
+            if (result.IsSuccessStatusCode)
+                profile.Name = username;
+        }
+    }
+
+    private BlazorWebAssymblyWeb3.Server.Profile? profile;
+    private Yokai? profilePicture;
+    private int yokaiCount;
+
+    private async ValueTask<ItemsProviderResult<Yokai>> LoadYokai(ItemsProviderRequest request)
+    {
+        if (ChosenMenu == 3)//favorites
+        {
+            if (FavoriteNFTS.Count == 0) return new ItemsProviderResult<Yokai>();
+            var numToDownload = Math.Min(request.Count, FavoriteNFTS.Count - request.StartIndex);
+            //Console.WriteLine($"{NFTS.Count} != {Loaded.Count} loading {numToDownload} request {request.Count} - {FavoriteNFTS.Count - request.StartIndex}");
+
+            var favoriteToLoad = FavoriteNFTS.Skip(request.StartIndex).Take(+numToDownload).ToList();
+            var favoriteToLoadAndDownload = favoriteToLoad.Where(x => !x.IsDownloaded && !x.IsNonExistent).ToList();
+
+            Loaded.AddRange(favoriteToLoadAndDownload);
+            return new ItemsProviderResult<Yokai>(favoriteToLoad.Where(x => !x.IsNonExistent), FavoriteNFTS.Count(x => !x.IsNonExistent));
+        }
+
+        if (NFTS.Count == 0) return new ItemsProviderResult<Yokai>();
+        var numYokai = Math.Min(request.Count, NFTS.Count - request.StartIndex);
+        //Console.WriteLine($"{NFTS.Count} != {Loaded.Count} loading {numEmployees} request {request.Count} - {NFTS.Count - request.StartIndex}");
+
+        var toLoad = NFTS.Skip(request.StartIndex).Take(+numYokai).ToList();
+        var toLoadAndDownload = toLoad.Where(x => !x.IsDownloaded && !x.IsNonExistent).ToList();
+
+        Loaded.AddRange(toLoadAndDownload);
+        return new ItemsProviderResult<Yokai>(toLoad.Where(x => !x.IsNonExistent), NFTS.Count(x => !x.IsNonExistent));
+    }
+
+    private bool FilterHidden { get; set; } = true;
+
+    private void ToggleSidebar()
+    {
+        FilterHidden = !FilterHidden;
+        StateHasChanged();
+    }
+
+    private Task EditAbout()
+    {
+        profileEdit = new ProfileEdit
+            {
+                Localisation = profile.Localisation,
+                Activity = profile.Activity,
+                Bio = profile.Bio,
+                Link = profile.Link,
+                InstagramNickname = profile.InstagramNickname,
+                TwitterHandle = profile.TwitterHandle,
+                Gender = profile.Gender ?? ""
+            };
+        EditingAbout = !EditingAbout;
+        return Task.CompletedTask;
+    }
+
+    public record struct Message(string contents);
+
+    private async Task SubmitProfileEditAsync()
+    {
+        var guid = await _http.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={connectedAddress}");
+
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+        if (!transaction.IsSuccess) return;
+        var postBody = new { pAddress = connectedAddress, pHash = transaction.Hash, pEditInfo = profileEdit };
+        var isEdited = await _http.PostAsJsonAsync("Profile/EditProfile", postBody);
+        if (isEdited.IsSuccessStatusCode)
+        {
+            var profileResult = await _http.GetAsync($"Profile/GetProfileOf?pAddress={connectedAddress}");
+            if (profileResult.IsSuccessStatusCode)
+                profile = await profileResult.Content.ReadFromJsonAsync<BlazorWebAssymblyWeb3.Server.Profile>();
+        }
+        EditingAbout = false;
+        StateHasChanged();
+    }
+
+    private async Task WalletNftChosen(WalletChoseData Data)
+    {
+        if (Data.Nft is null)
+        {
+            ChoosingPFP = false;
+            return;
+        }
+
+        var guid = await _http.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={connectedAddress}");
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+        if (!transaction.IsSuccess) return;
+
+        var result = await _http.GetAsync($"Profile/SetNFTProfilePicture?pAddress={connectedAddress}&pHash={transaction.Hash}&pCollectionAddress={Data.Collection.Address}&pTokenId={Data.Nft.TokenId}");
+        if (result.IsSuccessStatusCode)
+        {
+            await _storageService.RemoveItemAsync("connectedProfileNft");
+            _navManager.NavigateTo(_navManager.Uri, true);
+        }
+        ChoosingPFP = false;
+    }
+
+    private void Filter((string category, string option) pFilter)
+    {
+        filters = pFilter.option;
+        NFTSFiltered = string.IsNullOrWhiteSpace(filters) ? new() : NFTS.Where(x => string.Equals(filters, x.ContractAddress, StringComparison.InvariantCultureIgnoreCase)).ToList();
+        StateHasChanged();
+        //childFiltered?.Reset(true);
+    }
+
+    private void GalleryClick(WalletChoseData Data) => _navManager.NavigateTo($"{_navManager.BaseUri}asset/{Data.Collection.Address}/{Data.Nft.TokenId}/1");
+
+    private bool CopiedText { get; set; } = false;
+    private async Task Copy()
+    {
+        CopiedText = true;
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.copyText", UserAddress);
+    }
+
+    private void CopyOut() => CopiedText = false;
+}

@@ -1,0 +1,83 @@
+﻿@page "/_Host"
+@model BlazorWebAssymblyWeb3.Server.Pages._HostModel
+@namespace BlazorWebAssymblyWeb3.Server.Pages
+@using BlazorWebAssymblyWeb3.Server.Services;
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta property="og:type" content="website" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0 , user-scalable=no" />
+    <meta name="og:url" content="https://todai.world">
+    <meta name="description" content="Todai World is an NFT platform, where collectors have social/gamified experiences and trade their assets, with various useful tools, while being rewarded for their participation. Powered on Fantom.">
+    <meta property="og:image" content="@Model.Image">
+    <meta property="og:image:height" content="350" />
+    <meta property="og:image:width" content="350" />
+    <meta property="og:site_name" content="Todai - NFT Platform" />
+    <meta property="og:description" content="@Model.PageDescription" />
+    <meta name="twitter:site" content="Todai" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:description" content="@Model.PageDescription" />
+    <meta name="twitter:title" content="@Model.SiteName" />
+    <meta name="keywords" content="Todai, Todai World, Nft, Marketplace, Fantom, On-Chain, Innovative" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" sizes="any" />
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y5ZYTGR08X"></script>
+    @if(!Html.IsDebug())
+    {
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() { dataLayer.push(arguments); }
+            gtag('js', new Date());
+            gtag('config', 'G-Y5ZYTGR08X');
+        </script>
+    }
+    <title>Todai</title>
+    <base href="/" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" asp-append-version="true" />
+    <link href="YokaiTools.Client.styles.css" rel="stylesheet" />
+</head>
+
+<body>   
+    <div id="app">
+        <img class="todai-loading" src="/media/todai_loading.svg" alt="todaiworld loading">
+    </div>
+    @*<component type="typeof(App)" render-mode="WebAssembly" />*@
+<div id="blazor-error-ui" class="alert-message-container">
+<div class="alert-message error-bg row">
+    <div class="row--" style="width: 70px;">
+        <img height="28px" src="media/warning.svg" alt="">
+    </div>
+    <div class="column">
+        <div class="red" style="font-weight: 700;"> Oops!</div>
+        <p style="   opacity: 0.7;
+    font-weight: 400;
+    font-size: 0.9rem;"> A problem has occured !</p>
+    </div>
+    <img class="alert-close cursor dismiss" height="15px" src="media/close.svg" alt="close" style="opacity:0.7">
+
+</div>
+</div>
+@* <div id="blazor-error-ui"> *@
+@*         <environment include="Staging,Production"> *@
+@*             An error has occurred. This application may no longer respond until reloaded. *@
+@*         </environment> *@
+@*         <environment include="Development"> *@
+@*             An unhandled exception has occurred. See browser dev tools for details. *@
+@*         </environment> *@
+@*         <a href="" class="reload">Reload</a> *@
+@*         <a class="dismiss">🗙</a> *@
+@*     </div> *@
+
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="js/recover_lib.js"></script>
+</body>
+
+</html>

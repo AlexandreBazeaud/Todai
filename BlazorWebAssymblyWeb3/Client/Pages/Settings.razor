@@ -1,0 +1,101 @@
+@page "/settings"
+@page "/settings/{CollectionAddress}"
+@using MetaMask.Blazor
+
+@inject HttpClient _httpClient;
+@inject MetaMaskService _metamaskService;
+@inject NavigationManager _navManager;
+
+<div class=" page-c" style="height: 100%;">
+    <div class="page-i" style="height: 100%;">            
+            <div class="settings flex" >
+            <div class="side-menu column gap--">
+            <h2>My Profile</h2>
+            <button @onclick="() => ChangeMenu(1)"
+                class="scroll-button letter-spc">
+                GENERAL
+            </button>
+             <button onclick="document.getElementById('open-swap').scrollIntoView({behavior:'smooth'})"
+                class="scroll-button letter-spc" style="opacity: 0.5; cursor:default;">
+               PREFERENCES
+            </button>
+            <button onclick="document.getElementById('open-swap').scrollIntoView({behavior:'smooth'})"
+                class="scroll-button letter-spc" style="opacity: 0.5; cursor:default;">
+                APPEARANCE
+            </button>
+             <button onclick="document.getElementById('open-swap').scrollIntoView({behavior:'smooth'})"
+                class="scroll-button letter-spc"  style="opacity: 0.5; cursor:default;">
+                NOTIFICATIONS
+            </button>
+           
+                @if(ownedCollections != null)
+                {
+                     <h2>My Projects</h2>
+                    @foreach(var collection in ownedCollections)
+                    {
+                        <button @onclick="() => ChangeMenu(5,collection.Address)"
+                        class="scroll-button letter-spc">
+                        @collection.Name
+                        </button>
+                    }
+                }
+                
+        </div>
+          
+
+        <div class="settings-content">
+                @if(chosenMenu == Menu.ProfileGeneral)
+                {
+                    <ProfileSettings/>
+                }
+                else if(chosenMenu == Menu.CollectionSettings)
+                {
+                    <CollectionSettings CollectionAddress="@chosenCollection"/>
+                }
+
+           
+        </div>
+          </div>
+    </div>
+</div>
+@code{
+    [Parameter]
+    public string? CollectionAddress { get; set; }
+
+    private Menu chosenMenu = Menu.ProfileGeneral;
+    private enum Menu
+    {
+        ProfileGeneral = 1,
+        ProfilePreferences = 2,
+        ProfileAppearance = 3,
+        ProfileNotifications = 4,
+        CollectionSettings = 5
+    }
+
+    private string chosenCollection;
+    private void ChangeMenu(int pId, string pAddress = "")
+    {
+        var menu = (Menu)pId;
+        if (menu == Menu.CollectionSettings)
+            chosenCollection = pAddress;
+        chosenMenu = menu;
+    }
+
+    private List<BlazorWebAssymblyWeb3.Server.Collection>? ownedCollections;
+    protected override async Task OnInitializedAsync()
+    {
+        var isConnected = await _metamaskService.IsSiteConnected();
+        if (!isConnected)
+            _navManager.NavigateTo("/Home");
+
+        var address = await _metamaskService.GetSelectedAddress();
+        ownedCollections = await _httpClient.GetFromJsonAsync<List<BlazorWebAssymblyWeb3.Server.Collection>>($"Collection/GetOwnedCollections?pAddress={address}");
+
+        if(!string.IsNullOrWhiteSpace(CollectionAddress))
+        {
+            chosenCollection = CollectionAddress.ToLower();
+            chosenMenu = Menu.CollectionSettings;
+
+        }
+    }
+}

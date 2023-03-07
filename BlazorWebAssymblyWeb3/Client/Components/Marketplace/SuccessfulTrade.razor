@@ -1,0 +1,55 @@
+@using BlazorWebAssymblyWeb3.Client.Data
+@inject StateContainer _stateContainer;
+<style>
+ .folk-bg{
+     position: absolute;
+     object-fit: cover;
+     height: 132%;
+     max-width: 100%;
+     top: -77%;
+     left: 0;
+     -webkit-mask-image:-webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0)));
+     mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
+ }
+ .market-orders{
+    overflow: hidden;
+ }
+</style>
+
+<div class="modal market-orders column  gap--">
+    <img class="folk-bg" src="media/asset-texture.svg" alt="">
+  <img height="200" src="https://todai.world/images/@NftTraded.ContractAddress.ToLower()/@NftTraded.TokenId" alt="" style="margin-top:10px ;">
+<div>You successfuly acquired <b>@(NftTraded.Data?.name??"this nft")</b> !! </div>
+
+<a href="https://ftmscan.com/tx/@TransactionHash" target="_blank">
+<div class="classic-card row gap-- cursor" style="padding: 8px 16px;">
+ <p>Transaction Hash</p> 
+ <a class="a-link" href="https://ftmscan.com/tx/@TransactionHash" target="_blank" style="font-size:0.9rem;color:#B443FF;">@YokaiPatcher.ShortenAddress(TransactionHash)</a>
+</div>
+</a>
+ <div class="column--">
+     <a class="main-button" href="/profile/@_stateContainer.CurrentConnectedAddress/2"> View my Gallery </a>
+     <div class="btn-x" @onclick="Continue"> Continue</div>
+ </div>
+
+</div>
+
+<div class="modal-bg" @onclick="Continue"></div>
+
+@code{
+
+     [Parameter]
+     public Yokai NftTraded { get; set; }
+    
+     [Parameter]
+     public string TransactionHash { get; set; }
+    
+     [Parameter]
+     public Func<Task>? OnClose { get; set; }
+
+
+     private async Task Continue()
+     {
+        await OnClose?.Invoke();
+     }
+}

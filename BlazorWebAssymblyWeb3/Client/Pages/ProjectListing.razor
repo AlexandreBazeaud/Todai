@@ -1,0 +1,202 @@
+@page "/listing"
+@using BlazorWebAssymblyWeb3.Client.Data
+@using System.Text.Json
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using MetaMask.Blazor
+@using MetaMask.Blazor.Enums
+@using Microsoft.AspNetCore.Components
+@using System.Net
+
+@inject MetaMaskService metaMaskService;
+@inject HttpClient Http
+@inject AlertMessageService _alertMessageService;
+@inject Helper _helper;
+<PageTitle>Project Listing | Todai</PageTitle>
+ 
+ <style>
+.validation-message{
+  color: red;
+}
+
+ </style>
+<div class="listing column-center">
+    @* <h1> Get your Project listed on Todai</h1> *@
+    <EditForm Model="@listingData" OnValidSubmit="Submit">
+         <DataAnnotationsValidator/>
+        <ValidationSummary/>
+        <fieldset style="border: none;">
+            <div class="form">
+                <img class="bg-section" src="media/section.svg" alt="section borders">
+                <h1>Todai Form</h1>
+                <p> You must be connected with the contract owner address to submit your collection.</p>
+                <div class="form-item">
+                    <label>Project Name :</label>
+                    <InputText @bind-Value="@listingData.ProjectName"/>
+                </div>
+                <div class="form-item">
+                    <label>
+                        Mint Price :
+                    </label>
+                    <InputNumber @bind-Value="@listingData.MintPrice"/>
+
+                </div>
+                <div class="form-item">
+                    <label>
+                        Collection max Supply:
+                    </label>
+                    <InputText @bind-Value="@listingData.TotalSupply"/>
+
+                </div>
+                <div class="form-item">
+                    <label>
+                        Release Date :
+                    </label>
+                    <InputDate @bind-Value="@listingData.ReleaseDate"/>
+                </div>
+                <div class="form-item">
+                    Twitter
+                    <InputText @bind-Value="@listingData.SocialLinks.Twitter"/>
+                    Website
+                    <InputText @bind-Value="@listingData.SocialLinks.Website"/>
+                </div> 
+
+                <div class="form-item">
+                    <label>
+                        Collection Contract Adress :
+                    </label>
+                    <InputText class="search-bar" @bind-Value="@listingData.ContractAddress"/>
+
+                </div>
+                @* <div class="form-item">
+                    <label>
+                        Format :
+                    </label>
+                    <InputText @bind-Value="@listingData.Format"/>
+
+                </div>
+                <div class="form-item">
+                    <label>
+                        Storage :
+                    </label>
+                    <InputText @bind-Value="@listingData.Storage"/>
+                </div> *@
+                <div class="form-item">
+                    <InputRadioGroup TValue="string" @bind-Value="@listingData.MintStatut">
+                        Statut :
+                        <div class="row gap--">
+                        @foreach (var option in mintStatus)
+                        {
+                            <label>
+                                <InputRadio Value="option" />
+                                @option
+                            </label>
+                        }
+                        </div>
+                    </InputRadioGroup>
+                </div>
+                @* <div class="form-item">
+                    <label>
+                        Blockchain :
+                    </label>
+                    <InputSelect @bind-Value="listingData.Blockchain">
+                        <option value="">Select blockchain ...</option>
+                        @foreach (var chainData in Constant.HandledChains.Values)
+                        {
+                            <option value="@chainData.ChainId">@chainData.Name</option>
+                        }
+                    </InputSelect>
+                 <InputText @bind-Value="@listingData.Format" disabled  />  
+                </div> *@
+                <div class="form-item">
+                    <label>
+                        Keywords that describe the best your project
+                    </label>
+                    <InputTextArea @bind-Value="@listingData.Keywords"/>
+
+                </div>
+                <div class="form-item">
+
+                    <InputRadioGroup TValue="bool" @bind-Value="listingData.IsRarityAble">
+                        Rarity:
+                        <div class="row gap--">
+                        <label>
+                            <InputRadio Value="@true"/>Yes
+                        </label>
+                        <label>
+                            <InputRadio Value="@false"/>No
+                        </label>
+                        </div>
+
+                    </InputRadioGroup>
+                </div>
+
+                <button class="main-button" style="width: 100%;" type="submit">Submit</button>
+
+            </div>
+        </fieldset>
+
+    </EditForm>
+</div>
+
+
+@code {
+
+    private List<string> mintStatus = new() { "Upcoming", "Minting", "Soldout" };
+    private ListingData listingData = new();
+    private bool hasMetaMask;
+    private bool isSiteConnected;
+
+    private bool TextHidden = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hasMetaMask = await metaMaskService.HasMetaMask();
+        isSiteConnected = await metaMaskService.IsSiteConnected();
+    }
+
+    private void ToggleText()
+    {
+        TextHidden = !TextHidden;
+        StateHasChanged();
+    }
+
+    private async Task Submit(EditContext editContext)
+    {
+
+        Console.WriteLine("submit");
+        bool formIsValid = editContext.Validate();
+        if (!formIsValid)
+        {
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, "Oops! The form might be invalid");
+            return;
+        }
+        if (!hasMetaMask || !isSiteConnected) return;
+
+        var address = await metaMaskService.GetSelectedAddress();
+
+        var guid = await Http.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={address}");
+
+
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Profile.Message
+            {
+                contents = guid
+            });
+
+        if (!transaction.IsSuccess) return;
+        var postBody = new { pListingData = listingData };
+        try
+        {
+            var listingResult = await Http.PostAsJsonAsync($"Yokai/AddListedCollection?pHash={transaction.Hash}&pAddress={address}", postBody);
+            if(listingResult.IsSuccessStatusCode)
+                _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Thanks for reaching Todai, we will review your project before listing!");
+            else
+                _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, $"Looks there was an error adding your collection - {listingResult.ReasonPhrase}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+}

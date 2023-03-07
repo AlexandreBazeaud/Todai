@@ -1,0 +1,34 @@
+.hero-left p{
+  font-size: 1.05rem !important;
+  font-weight: 300 !important;
+  opacity: 0.8;
+}
+.rewards-hero{
+  width: 1300px;margin:auto;justify-content:space-between;
+}
+.rewards-invetory{
+  padding: 50px 20px; width: 1300px
+}
+@media (max-width: 1350px) {
+.rewards-hero{
+  flex-direction: column;
+  align-items: center;
+  width: unset;
+  gap: 20px;
+}
+.hero-left{
+  text-align: center;
+  width: 98%;
+}
+.hero-right{
+  width: 98%;
+  height: unset;
+  margin-bottom: 50px;
+}
+.rewards-invetory{
+  align-items: center;
+  width: 100%;
+
+justify-content: center;
+}
+}

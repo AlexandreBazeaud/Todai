@@ -1,0 +1,290 @@
+﻿@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Server
+@using Newtonsoft.Json
+@using System.Text
+@using BlazorWebAssymblyWeb3.Client.Services
+@using MetaMask.Blazor
+@using BlazorWebAssymblyWeb3.Client.Components.Marketplace
+@using BlazorWebAssymblyWeb3.Shared.Forms;
+@inject IJSRuntime _jsRuntime;
+@inject NavigationManager _navManager;
+@inject HttpClient _http
+@inject MetaMaskService _metaMaskService;
+@inject SessionStorageService _storageService;
+@inject Helper _helper;
+@inject AlertMessageService _alertMessageService;
+@inject StateContainer _stateContainer;
+
+<div class="@Class @(small ? "smaller-itm" : "")">
+    <div class="nft-item-hover" @onclick="onClick"></div>
+    <div class="nft-more row-sb gap" style="width: 100%;padding:2% 6%;">
+
+           <div class="rank bold dt" style="background: #24192F;">
+                @if (NFT.Rank != 0 && NFT.Rank != int.MaxValue)
+                {
+                    <i class="bold" style="font-size: 15px ;">#@NFT.Rank </i>
+                }
+            </div>
+            <div class="row gap">
+
+            
+        @if (IsFavorited != null)
+        {
+            <div class="tooltip-c" @onclick="Favorite">
+                <img height="20" src="@(IsFavorited.Value ? "media/favorite_icon.svg":"media/notfavorite_icon.svg")" alt="">
+                <div class="tooltip">
+                    Favorite
+                </div>
+            </div>
+        }
+        <img height="30px" src="media/more.svg" alt="" @onclick="NftMenu">
+        </div>
+    </div>
+    <div class="art-asset-name row--" >
+        <i style="color: white;" class="bold market-item-title"> @NFT.Data?.name </i> 
+    </div>
+
+    <div class="nft-menu column-- gap--" style="@(!more ? "display: none;" : "")">
+        @* <div class="dt"> Swap offer </div> *@
+        @if (IsCurrentConnectedProfile)
+        {
+            <div class="dt" @onclick="SetNFTProfilePicture"> Set as profile pic</div>
+            <div class="dt" @onclick="ListNft"> List this NFT</div>
+        }
+        else
+        {
+            <button class="button-edit market-button-edit" style="border:none; width:100px !important" @onclick="MakeOffer">Make Offer</button>
+        }
+        @if (AssetListed != null && !IsCurrentConnectedProfile)
+        {
+            <div class="dt" @onclick="Checkout"> Buy now</div>
+        }
+        <img height="20px" src="media/close.svg" alt="" @onclick="NftMenu">
+    </div>
+    <div @onclick="onClick">
+        <div class="nft-img">
+            <img src="@(string.IsNullOrWhiteSpace(NFT.Data?.image) ? "media/nft_loading.svg" : NFT.Data.image)" alt="NFT" />
+        </div>
+    </div>
+    @* <div class="nft-item-footer">
+        @if (WithFooter)
+        {
+
+            <div class="rank bold">
+                @if (NFT.Rank != 0)
+                {
+                    <i class="big bold">#@NFT.Rank </i>
+                }
+            </div>
+            <div> @(NFT.Data?.name?.Length > 25 ? NFT.Data?.name?.Substring(0, 25) + "..." : NFT.Data?.name) </div>
+
+        }
+    </div> *@
+</div>
+@if (listing)
+{
+    <ListingAsset NFT="NFT" Close="CloseListing" />
+}
+@if (buying)
+{
+    <CheckoutOffer AssetListed="AssetListed" NFT="NFT" OnClose="CheckoutClose"/>
+}
+@if (makeOffer)
+{
+    <MakeOffer NFT="NFT" AssetListed="AssetListed" Close="CloseMakeOffer" />
+}
+
+@code {
+
+    [Parameter]
+    public Yokai NFT { get; set; }
+
+    [Parameter]
+    public int? CollectionId { get; set; }
+
+    [Parameter]
+    public bool WithFooter { get; set; }
+
+    [Parameter]
+    public Func<Yokai, Task>? OnClick { get; set; }
+
+    [Parameter]
+    public bool small { get; set; }
+
+    private bool more = false;
+
+    [Parameter]
+    public bool ShouldLoad { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public bool IsCurrentConnectedProfile { get; set; }
+
+    [Parameter]
+    public string? ConnectedAddress { get; set; }
+
+    [Parameter]
+    public bool? ShouldRedirect { get; set; } = true;
+
+    [Parameter]
+    public bool? IsFavorited { get; set; }
+
+    [Parameter]
+    public Func<Yokai, Task>? OnClickGlobal { get; set; }
+
+    [Parameter]
+    public AssetListing? AssetListed { get; set; }
+
+    private void NftMenu()
+    {
+        more = !more;
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        if (Class is null)
+            Class = "nft-item";
+
+        if (ShouldLoad)
+        {
+            if (NFT.ContractAddress.Equals(Constant.YOKAIADDRESS, StringComparison.InvariantCultureIgnoreCase))
+            {
+                Task.Run(() =>
+                {
+                    NFT.Data = JsonConvert.DeserializeObject<YokaiData>(Encoding.UTF8.GetString(Convert.FromBase64String(NFT.BlockChainTokenUri[29..])));
+                    StateHasChanged();
+                });
+            }
+            else
+            {
+                _jsRuntime.InvokeAsync<string>("RecoverLib.GetTokenUriOf", NFT.BlockChainTokenUri).AsTask().ContinueWith(x =>
+                {
+                    var uri = x.Result;
+                    NFT.Data = JsonConvert.DeserializeObject<YokaiData>(uri);
+                    StateHasChanged();
+                });
+            }
+        }
+        else
+        {
+            NFT.Data ??= new YokaiData();
+            if (NFT.ContractAddress.Equals(Constant.YOKAIADDRESS, StringComparison.CurrentCultureIgnoreCase))
+                NFT.Data.image = $"https://todai.world/images/0x59c7b16369422959eeb218c7270e3b5132cb1f28/{NFT.TokenId}";
+            else
+                NFT.Data.image = $"https://todai.world/images/{NFT.ContractAddress.ToLower()}/{NFT.TokenId}";
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task onClick()
+    {
+        if (!(ShouldRedirect.GetValueOrDefault()))
+            return;
+        if (OnClick is null)
+            _navManager.NavigateTo($"{_navManager.BaseUri}asset/{NFT.ContractAddress}/{NFT.TokenId}");
+        else
+            await OnClick.Invoke(NFT);
+    }
+
+    private async Task Favorite()
+    {
+        var address = await _metaMaskService.GetSelectedAddress();
+
+        var guid = await _http.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={address}");
+
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+
+        if (!transaction.IsSuccess) return;
+
+        var favorite = await _http.GetStringAsync($"Yokai/FavoriteAsset?pCollectionId={CollectionId}&pTokenId={NFT.TokenId}&pSignatureHash={transaction.Hash}&pAddress={address}");
+        IsFavorited = !IsFavorited;
+        StateHasChanged();
+    }
+
+    
+    private async Task SetNFTProfilePicture()
+    {
+        var guid = await _http.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={ConnectedAddress}");
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+        if (!transaction.IsSuccess) return;
+
+        var result = await _http.GetAsync($"Profile/SetNFTProfilePicture?pAddress={ConnectedAddress}&pHash={transaction.Hash}&pCollectionAddress={NFT.ContractAddress}&pTokenId={NFT.TokenId}");
+        if (result.IsSuccessStatusCode)
+        {
+            await _storageService.RemoveItemAsync("connectedProfileNft");
+            _navManager.NavigateTo(_navManager.Uri, true);
+        }
+    }
+
+    private bool listing = false;
+    private void ListNft()
+    {
+        listing = true;
+    }
+
+    private void CloseListing()
+    {
+        listing = false;
+    }
+
+    private bool buying;
+    private bool runningTransaction;
+    public void Checkout()
+    {
+        buying = true;
+    }
+
+    public Task CheckoutClose()
+    {
+        buying = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public async Task CancelOrder()
+    {
+        var reference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.cancelOrder", AssetListed.OrderJson, reference);
+    }
+
+    private bool makeOffer = false;
+    private void MakeOffer()
+    {
+        if (string.IsNullOrWhiteSpace(_stateContainer.CurrentConnectedAddress))
+        {
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Info, "You need to be connected");
+            return;
+        }
+        makeOffer = true;
+    }
+
+    private void CloseMakeOffer()
+    {
+        makeOffer = false;
+    }
+
+    [JSInvokable]
+    public async Task WaitingTransaction()
+    {
+        runningTransaction = true;
+    }
+
+    [JSInvokable]
+    public async Task TransactionDone(bool isSuccess, string pError = "")
+    {
+        runningTransaction = false;
+        if (isSuccess)
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Listing has been canceled");
+        else
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+    }
+}

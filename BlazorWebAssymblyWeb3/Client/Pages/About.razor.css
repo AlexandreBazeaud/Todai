@@ -1,0 +1,48 @@
+
+
+h1{
+    text-align: center;
+    margin-top: 130px;
+    margin-bottom: 30px;
+}
+
+.quarter{
+    background-color: rgba(255, 255, 255, 0.05);
+    height: 100px;
+    width: 100px;
+    border-radius: 50%;
+    backdrop-filter: blur(2px);
+}
+
+p{
+    opacity: 0.5;;
+}
+
+.road-q{
+    align-items: center;
+    height: 420px;
+    width: 300px;
+}
+
+.road-q img{
+    position: absolute;
+    left: -20px;
+    bottom: 4px;
+}
+
+.road-q .row--{
+    position: relative;
+}
+
+.about-faq{
+    width: 800px;
+}
+
+@media (max-width: 650px) {
+    .classic-card{
+      width: 98vw !important;
+    }
+    .about-faq{
+        width: 95vw !important;
+    }
+  }

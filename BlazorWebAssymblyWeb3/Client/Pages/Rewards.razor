@@ -1,0 +1,170 @@
+@page "/rewards"
+
+@using BlazorWebAssymblyWeb3.Client.Data
+@using MetaMask.Blazor
+@using BlazorWebAssymblyWeb3.Server;
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Client.Components.Rewards
+@inject HttpClient _http
+@inject IJSRuntime _jsRuntime;
+@inject MetaMaskService _metaMaskService;
+@inject PaintswapService _paintswapService;
+@inject SessionStorageService _storageService;
+@inject Helper _helper;
+@inject NavigationManager _navManager;
+@inject StateContainer _stateContainer;
+
+<style>
+    .hero-left {
+        width: 38%;
+    }
+
+    .hero-right {
+        width: 60%;
+        height: 555px;
+    }
+
+    .rewards-hero p {
+        font-size: 1.2rem !important;
+    }
+    .hero-right p {
+        font-size: 0.9rem !important;
+    }
+
+    .result-menu {
+        padding-left: 60px;
+        width: 100%;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+        .result-menu button {
+            font-size: 1rem;
+            margin-right: 20px;
+            padding: 10px;
+            opacity: 0.7;
+        }
+
+    .selected- {
+        opacity: 1 !important;
+        margin-bottom: -3px;
+        border-bottom: 3px solid white;
+    }
+
+    .page-c {
+        padding-bottom: 350px;
+    }
+
+    .reward-item {
+        width: 220px;
+    }
+
+    .chests {
+        padding: 15px !important;
+        font-size: 0.9rem;
+        width: 120px;
+        cursor: pointer;
+        overflow: hidden;
+    }
+
+        .chests:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+    .chest-content {
+        justify-content: center;
+        backdrop-filter: unset;
+        width: 180px;
+        height: 200px;
+    }
+</style>
+<div class="page-c">
+    <div class="rewards-page  column" style="padding-top:5vh ;">
+        <div class="rewards-hero flex" >
+            <div class="hero-left">
+                <div class="column gap--">
+                    <h1 style="font-size:57px ;"> Rewards </h1>
+                    <p>Explore Todai Platform and get a chance to win rare item chests. Many exciting rewards are sealed in
+                        !</p>
+                    <p> No platform Token, No Risks, just Rewards.</p>
+                        <div class="row dt desktop" style="width: 170px; font-size:15px; height:38px">Remaining Chests -></div>
+                    @* <button class="main-button" style="border-radius: 50px;"></button> *@
+                </div>
+            </div>
+            <div class="hero-right">
+                @if(chestState != null)
+                {
+                    <ChestContent chestState="chestState"/>
+                }
+                <img src="media/rewards_bg.webp" style="height:600px; position:absolute; bottom:-45px; right:-130px; z-index:-1;" alt="nft seal" />
+            </div>
+        </div>
+        <div >
+            <div class="result-menu row-sb ">
+                <div class="result-menu row-sb "
+                     style="max-width: 1300px;margin:auto; border-bottom:unset;padding-left:unset;">
+                    <div class="row">
+                        <button class="btn-x row gap selected-">
+                            Earned
+                            <div class="dt">@(chests?.Count ?? 0)</div>
+                        </button>
+                        @* <button class="btn-x row gap">
+                        Staked NFTs
+                        <div class="dt">0</div>
+                        </button> *@
+                    </div>
+                    <h1 class="desktop" style="font-size: 82px; position:absolute; right:0; bottom:0; right:50px; font-weight:400; opacity:0.7;">
+                        @(Helper.ToReadableChestTimer(diff))
+                    </h1>
+                </div>
+            </div>
+        </div>
+        <div class="rewards-invetory page-i wrap gap-">
+            @if (chests != null)
+            {
+                @foreach (var chest in chests)
+                {
+                    <ChestEarned Chest="chest"/>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+    private bool content = false;
+    private bool earned = false;
+    private bool isConnected = false;
+    private string userAdress;
+    private void seeEarned() => earned = true;
+    private void closeEarned() => earned = false;
+
+    private List<RewardValue> chests;
+    private int[] chestState;
+    private Timer? timer;
+    // {0:MM/dd/yy H:mm:ss zzz
+
+    private TimeSpan diff = new DateTime(2022, 02, 17, 18, 00, 00) - DateTime.UtcNow;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isConnected = await _metaMaskService.IsSiteConnected();
+
+        //await metaMaskService.ListenToEvents();
+        chestState = await _http.GetFromJsonAsync<int[]>("Marketplace/GetChestState");
+        if (isConnected)
+        {
+            userAdress = (await _metaMaskService.GetSelectedAddress()).ToLower();
+
+            chests = await _http.GetFromJsonAsync<List<RewardValue>>($"Marketplace/GetRewardChestFor?userAddress={userAdress}");
+        }
+
+        timer = new System.Threading.Timer((object? stateInfo) =>
+        {
+            diff = diff.Subtract(TimeSpan.FromSeconds(1));
+            StateHasChanged(); // NOTE: MUST CALL StateHasChanged() BECAUSE THIS IS TRIGGERED BY A TIMER INSTEAD OF A USER EVENT
+        }, new System.Threading.AutoResetEvent(false), 1000, 1000);
+    }
+
+}

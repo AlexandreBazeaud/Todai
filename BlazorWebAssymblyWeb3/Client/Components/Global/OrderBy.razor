@@ -1,0 +1,144 @@
+<style>
+    .filter-select-c {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .filter-select {
+        position: relative;
+        cursor: pointer;
+        height: 40px;
+        width: 190px;
+        gap: 12px;
+        font-size: 0.92rem;
+        line-height: 18px;
+        border: 1px solid rgba(245, 245, 245, 0.158);
+        border-radius: 5px;
+        background-color: transparent;
+        padding: 0 16px;
+    }
+
+    .filter-select>img {
+        height: 18px;
+    }
+
+    .filter-select:hover {
+        background-color: #ffffff0a;
+    }
+
+    .filter-option-list {
+        position: absolute;
+        top: 40px;
+        width: 190px;
+        border: 1px solid rgba(245, 245, 245, 0.158);
+        z-index: 3;
+        font-size: 0.92rem;
+        cursor: pointer;
+        background: #362646f7;
+        backdrop-filter: blur(8px);
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+
+    .filter-option {
+        border-top: 1px solid rgba(245, 245, 245, 0.158);
+        padding: 12px;
+    }
+
+    .filter-option:hover {
+        background-color: #ffffff0c;
+    }
+
+    .filter-select-c::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .active {
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 0px;
+    }
+</style>
+
+<div class="filter-select-c">
+    <div class="filter-select row-sb @(!filterHidden ? "active" : "")  " @onclick="filterSelect">
+        <div class="row gap">
+            @modeText
+        </div>
+        <img style="height:6px;" src="media/arrow_down.svg" alt="">
+    </div>
+
+    @if (!filterHidden)
+    {
+        <div class="filter-option-list column">
+            <div class="filter-option" @onclick="() => clickOrder(1)">
+                Price - Low to High
+            </div>
+            <div class="filter-option" @onclick="() => clickOrder(2)">
+                Price - High to Low
+            </div>
+            @if(WithRarity)
+            {
+                <div class="filter-option" @onclick="() => clickOrder(3)">
+                    Rarity
+                </div>
+            }
+            <div class="filter-option" @onclick="() => clickOrder(4)">
+                Most recent
+            </div>
+            <div class="filter-option" @onclick="() => clickOrder(5)">
+                Oldest
+            </div>
+            <div class="filter-option" @onclick="() => clickOrder(6)">
+                Most favorited
+            </div>
+        </div>
+    }
+
+
+</div>
+
+@code {
+
+    [Parameter]
+    public EventCallback<OrderByMode> OnOrderByChange { get; set; }
+
+    [Parameter]
+    public bool WithRarity { get; set; }
+
+    private OrderByMode orderByMode { get; set; } = OrderByMode.MostRecent;
+    private string modeText = "Most recent";
+    public enum OrderByMode
+    {
+        PriceLowToHigh = 1,
+        PriceHighToLow = 2,
+        Rarity = 3,
+        MostRecent = 4,
+        Oldest = 5,
+        MostFavorited = 6
+    }
+
+    private bool filterHidden { get; set; } = true;
+
+    private void filterSelect()
+    {
+        filterHidden = !filterHidden;
+    }
+
+    private async Task clickOrder(int pId)
+    {
+        orderByMode = (OrderByMode)pId;
+        modeText = orderByMode switch
+        {
+            OrderByMode.MostRecent => "Most recent",
+            OrderByMode.Rarity => "Rarity",
+            OrderByMode.MostFavorited => "Most favorited",
+            OrderByMode.Oldest => "Oldest",
+            OrderByMode.PriceHighToLow => "Price - High to Low",
+            OrderByMode.PriceLowToHigh => "Price - Low to High"
+        };
+        await OnOrderByChange.InvokeAsync(orderByMode);
+        filterHidden = true;
+        //await InvokeAsync(StateHasChanged);
+    }
+}

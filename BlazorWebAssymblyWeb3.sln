@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.31903.286
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YokaiTools.Server", "BlazorWebAssymblyWeb3\Server\YokaiTools.Server.csproj", "{ED93567B-89A8-4B22-A00C-F1FF6D699DC1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YokaiTools.Client", "BlazorWebAssymblyWeb3\Client\YokaiTools.Client.csproj", "{A1253C03-97DA-4907-A6FD-A7BA4BE8E4D0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YokaiTools.Shared", "BlazorWebAssymblyWeb3\Shared\YokaiTools.Shared.csproj", "{96A65643-8162-49D2-B052-6BBEFCB5A0A3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ED93567B-89A8-4B22-A00C-F1FF6D699DC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED93567B-89A8-4B22-A00C-F1FF6D699DC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED93567B-89A8-4B22-A00C-F1FF6D699DC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED93567B-89A8-4B22-A00C-F1FF6D699DC1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1253C03-97DA-4907-A6FD-A7BA4BE8E4D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1253C03-97DA-4907-A6FD-A7BA4BE8E4D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1253C03-97DA-4907-A6FD-A7BA4BE8E4D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1253C03-97DA-4907-A6FD-A7BA4BE8E4D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{96A65643-8162-49D2-B052-6BBEFCB5A0A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96A65643-8162-49D2-B052-6BBEFCB5A0A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96A65643-8162-49D2-B052-6BBEFCB5A0A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96A65643-8162-49D2-B052-6BBEFCB5A0A3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {372377AC-BC7A-445A-B3E0-C64B4392448A}
+	EndGlobalSection
+EndGlobal

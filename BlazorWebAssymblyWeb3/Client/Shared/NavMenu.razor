@@ -1,0 +1,666 @@
+﻿@using BlazorWebAssymblyWeb3.Server
+@using BlazorWebAssymblyWeb3.Shared
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using MetaMask.Blazor
+@using MetaMask.Blazor.Enums
+@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Client.Services
+@using MetaMask.Blazor.Exceptions
+@using Newtonsoft.Json
+@using BlazorWebAssymblyWeb3.Client.Components
+@using System.Numerics
+@using BlazorWebAssymblyWeb3.Client.Components.Global;
+@inject HttpClient _http
+@inject MetaMaskService _metaMaskService;
+@inject NavigationManager _navManager;
+@inject IJSRuntime _jsRuntime;
+@inject SessionStorageService _storageService;
+@inject StateContainer _stateContainer;
+
+
+<div class="navbar row">
+    <div class="container-nav row">
+        <div class="nav-left row">
+            <NavLink class="nav-link" href="/home">
+                <div class="navbar-logo row gap">
+                    <img height="32" src="media/yokai_logo.svg" alt="">
+                    <div> Todai<span class="i-logo " style="padding-left: 2px; font-size:1rem;"> beta</span> </div>
+                </div>
+            </NavLink>
+            <div style="position: relative;">
+                <div class="search" style="@(searchModalHidden?"":"z-index:100000000000000;")">
+                    <img class="search-icon" src="/media/search_icon.svg" alt="search" />
+                    <input class="search-bar" type="text" placeholder="Search project by name" @bind="keywords" @bind:event="oninput" @onkeyup="SearchByKeywords" />
+                </div>
+                <div class="search-results-modal" style="@(searchModalHidden?"display:none;":"")" @onfocusout="HideSearchModal">
+                    <h3>Collections</h3>
+                    <div class="wrap gap--" style="justify-content: ;">
+                        @if (searchResult?.Collections != null)
+                        {
+                            @foreach (var collection in searchResult.Collections)
+                            {
+                                <a class="row gap" href="\collection\@collection.Address" @onclick="clickOnResearchResultAsync"> <img src="https://todai.world/images/@collection.Address/ProfilePicture"> @collection.Name</a>
+                            }
+                            @if (searchResult.Collections.Count == 0 && keywords?.Length >= 3)
+                            {
+                                <p style="font-size: 10;opacity:0.4;font-style: italic;">No result</p>
+                            }
+                            @if (keywords?.Length < 3)
+                            {
+                                <div style="font-size: 10;opacity:0.4;font-style: italic;">Please enter more than 3 characters</div>
+                            }
+                        }
+                    </div>
+                    <h3>Users</h3>
+                    <div class="wrap gap--">
+                        @if (searchResult?.Profiles != null)
+                        {
+                            @foreach (var profile in searchResult.Profiles)
+                            {
+                                <a class="row gap" href="\profile\@profile.Address" @onclick="clickOnResearchResultAsync"> <img src="https://todai.world/images/@profile.Nft.Collection.Address/@profile.Nft.TokenId"> @profile.Name</a>
+                            }
+                            @if (searchResult.Profiles.Count == 0 && keywords?.Length >= 3)
+                            {
+                                <p style="font-size: 10;opacity:0.4;font-style: italic;">No result</p>
+                            }
+                            @if (keywords?.Length < 3)
+                            {
+                                <div style="font-size: 10;opacity:0.4;font-style: italic;">Please enter more than 3 characters</div>
+                            }
+                        }
+                    </div>
+                    <div style="width: 500px; margin-left:-30px; margin-top:40px">
+                        <a class="button-edit" style="width: 100%;" href="/explorer/@keywords">All results</a>
+                    </div>
+
+                </div>
+                <div class="modal-bg" style="opacity: 0.7; @(searchModalHidden?"display:none;":"")" @onclick="HideSearchModal"></div>
+            </div>
+            <div class="nav-menu row">
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="explorer" Match="NavLinkMatch.All">
+                        <span aria-hidden="true">Explorer</span>
+                    </NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="collections">
+                        <span aria-hidden="true">Collections</span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="about">
+                        <span aria-hidden="true">About</span>
+                    </NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="" href="rewards">
+                        <span aria-hidden="true" class="gradient-text">Rewards</span>
+                        @if (notifsPayloads != null && notifsPayloads.Any(x => x.EventId == 3 && !x.read))
+                        {
+                            <span class="notify-badge"></span>
+                        }
+
+                    </NavLink>
+                </div>
+            </div>
+        </div>
+        <button class="burger-menu" @onclick="ToggleNavbar">
+            <img height="35" src="media/@(NavbarHidden ? "burgermenu.svg" : "close.svg")" alt="">
+        </button>
+        <div class="nav-right row">
+            <div class="nav-item">
+                <a href="https://yokaichain.com/Mint" target="_blank"> <button class="button-edit" style="font-size: 14px; height:25px; border:1px solid #FFFFFF10"> Mint Yokai </button></a>
+            </div>
+            <div class="row" style="height: 100%;">
+                <div class="hover-notif-about row--">
+                    <div class="nav-bg-hover"></div>
+                    <button class="btn-x row" style="height: 100%; margin-bottom:-4px; opacity:0.8; "> <img width="30" src="media/more.svg" alt="more"></button>
+                    <div class="nav-more column-">
+                        <div class="nav-more-item row gap-c">
+                            <NavLink href="About">
+                                About
+                            </NavLink>
+                        </div>
+
+                        <div class="nav-more-item row gap-c">
+                            <a href="https://torimoontori.gitbook.io/todai/" target="_blank" style="font-size: 1rem;">
+                                Documentation
+                            </a>
+                        </div>
+                        @* <NavLink class="nav-more-link" href="Collections">
+                        Discord Bot
+                        </NavLink>  *@
+                        <div style="border-top: 1px solid #ffffff10;  justify-content:center; position:absolute; bottom:5px;">
+                            <div class="media row gap--">
+                                <a href="https://discord.com/invite/2r4C2VXDHz" target="_blank">
+                                    <img src="/media/discord.svg" alt="" />
+                                </a>
+                                <a href="https://twitter.com/todaiworld" target="_blank">
+                                    <img src="/media/twitter.svg" alt="" />
+                                </a>
+                                <a href="https://medium.com/@@todaiworld" target="_blank">
+                                    <img src="/media/medium.svg" alt="" />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (!isConnected)
+            {
+                <button class="main-button row-- gap" @onclick="ConnectMetaMaskAsync">
+                    Web3 Connect
+                    <img class="ftm-icon" src="/media/ftm_dark.svg" alt="fantom" style="margin-right: -5px;" />
+                </button>
+            }
+            else
+            {
+                <div class="row" style="height: 100%;">
+                    <div class="hover-notif row--">
+                        <button class="btn-x" style="height: 20px;">
+                            @if (notifsPayloads is null || notifsPayloads.All(x => !x.read))
+                            {
+                                <img height="22" src="media/notif.svg" alt="notifications">
+                            }
+                            else
+                            {
+                                <img height="22" src="media/new-notif.svg" alt="notifications">
+                            }
+                        </button>
+                        <div class="notifs">
+                            <div class="notif-header row-sb">
+                                <div class="row gap-c">    <h2 style="font-size:21px ;">Notifications</h2> <p>(@notifsPayloads?.Count)</p>  </div>
+                                <button class="button-edit scale--" @onclick="ClearAllNotifications">clear all</button>
+                            </div>
+                            <div class="notif-list column">
+                                @if (notifsPayloads != null)
+                                {
+                                    @foreach (var notif in notifsPayloads)
+                                    {
+                                        <div class="notif" @onmouseover="() => {if(!notif.read) ReadNotif(notif.id);}">
+                                            <div class="row" style="gap: 18px;">
+
+                                                <img height="25" style="opacity: 0.5;" src="media/swap_notif.svg" alt="">
+
+                                                <div class="column">
+                                                    <div class="row gap">
+                                                        @if (!notif.read)
+                                                        {
+                                                            <div class="red-point"></div>
+                                                        }
+                                                        @notif.name
+                                                    </div>
+                                                    <p> @notif.message </p>
+                                                    <span>@notif.date.ToLongTimeString()</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+                    @if (profileNft != null)
+                    {
+                        <div class="profile-hover">
+                            <div class="nav-bg-hover"></div>
+                            <NavLink style="margin-right: 10px;" class="row--" href="@($"profile/{connectedAddress}")">
+                                <Nft WithFooter="false" NFT="profileNft" Class="nav-profile" ShouldRedirect="false" ShouldLoad="false" />
+                            </NavLink>
+                            <div class="profile-hover-content ">
+                                <div class="column-">
+                                    <div class="row gap-c" style="margin-top:12px ">
+                                        <h2 style="font-size: 18px; ">
+                                            @profileData?.name
+                                        </h2>
+                                        <p> lvl.@profileData.level</p>
+                                    </div>
+
+                                    <NavLink href="@($"profile/{connectedAddress}")">
+                                        <div class="nav-more-item row gap-c">
+
+                                            Profile
+                                        </div>
+                                    </NavLink>
+
+                                    <NavLink href="@($"profile/{connectedAddress}/2")">
+                                        <div class="nav-more-item row gap-c">
+
+                                            Gallery
+                                        </div>
+                                    </NavLink>
+
+                                    <NavLink href="listing">
+                                        <div class="nav-more-item row gap-c">
+                                            Submit a Project
+                                        </div>
+                                    </NavLink>
+
+                                    <NavLink href="settings">
+                                        <div class="nav-more-item row gap-c">
+                                            Settings
+                                        </div>
+                                    </NavLink>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    }
+                    else
+                    {
+                        <NavLink style="margin-right: 10px;" class="row--" href="@($"profile/{connectedAddress}")">
+                            <div class="nav-profile">
+                                <img height="100%" src="media/profile_default.png" alt="">
+                            </div>
+                        </NavLink>
+                    }
+
+
+                </div>
+                <style>
+                    .button-edit {
+                        background: #ffffff09;
+                    }
+                </style>
+                <button class="button-edit row-- gap" @onclick="WalletModal">
+                    @YokaiPatcher.ShortenAddress(connectedAddress)
+                    <img class="ftm-icon" src="/media/ftm.svg" alt="fantom" style="margin-right: -5px;" />
+                </button>
+            }
+        </div>
+
+    </div>
+
+
+</div>
+
+@*  /////////  NAVBAR MOBILE ////////////*@
+
+<div class="navbar-mobile @(NavbarHidden ? "hide" : "show") ">
+
+    <button class="burger-menu" @onclick="ToggleNavbar" style="position: absolute; top:1%; right:2%">
+        <img height="35" src="media/@(NavbarHidden ? "burgermenu.svg" : "close.svg")" alt="">
+    </button>
+
+    @if (!isConnected)
+    {
+        <button class="main-button row-- gap" @onclick="ConnectMetaMaskAsync">
+            Web3 Connect
+            <img class="ftm-icon" src="/media/ftm_dark.svg" alt="fantom" style="margin-right: -5px;" />
+        </button>
+    }
+    @if (isConnected)
+    {
+        <NavLink class="row-- tooltip-c" href="@($"profile/{connectedAddress}")" @onclick="ToggleNavbar">
+            <div class="row-- gap" style="padding: 10px 30px ;">
+
+                @if (profileNft != null)
+                {
+                    <style>
+                        ::deep.nft-img {
+                            height: 60px !important;
+                        }
+                    </style>
+                    <Nft WithFooter="false" NFT="profileNft" Class="nav-profile" ShouldRedirect="false" ShouldLoad="false" />
+                }
+                else
+                {
+                    <div class="nav-profile">
+                        <img height="100%" src="media/profile_default.png" alt="">
+                    </div>
+                }
+
+                <div class="column">
+                    <h2> @profile?.Name </h2>
+                    <p>  @YokaiPatcher.ShortenAddress(connectedAddress) </p>
+
+                </div>
+            </div>
+        </NavLink>
+
+
+
+    }
+    <div class="column">
+        <NavLink href="@($"profile/{connectedAddress}")" @onclick="ToggleNavbar">
+            <div class="nav-more-item row gap-c">
+
+                Profile
+            </div>
+        </NavLink>
+
+        <NavLink href="@($"profile/{connectedAddress}/2")" @onclick="ToggleNavbar">
+            <div class="nav-more-item row gap-c">
+
+                Gallery
+            </div>
+        </NavLink>
+        <NavLink href="settings" @onclick="ToggleNavbar">
+            <div class="nav-more-item row gap-c">
+                Settings
+            </div>
+        </NavLink>
+    </div>
+
+    <div class="nav-item">
+        <NavLink class="nav-link" href="explorer" Match="NavLinkMatch.All" @onclick="ToggleNavbar">
+            <span aria-hidden="true">Home</span>
+        </NavLink>
+
+    </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="/" Match="NavLinkMatch.All" @onclick="ToggleNavbar">
+            <span aria-hidden="true">Explorer</span>
+        </NavLink>
+
+    </div>
+
+    <div class="nav-item">
+        <NavLink class="nav-link" href="collections" @onclick="ToggleNavbar">
+            <span aria-hidden="true">Collections</span>
+        </NavLink>
+    </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="about" @onclick="ToggleNavbar">
+            <span aria-hidden="true">About</span>
+        </NavLink>
+    </div>
+    <div class="media row gap">
+        <a href="https://discord.com/invite/2r4C2VXDHz" target="_blank">
+            <img src="/media/discord.svg" alt="" />
+        </a>
+        <a href="https://twitter.com/todaiworld" target="_blank">
+            <img src="/media/twitter.svg" alt="" />
+        </a>
+        <a href="https://medium.com/@@todaiworld" target="_blank">
+            <img src="/media/medium.svg" alt="" />
+        </a>
+    </div>
+
+</div>
+
+@*  /////////  END ////////////*@
+
+<div class="wallet-menu  @(WalletHidden ? "hide" : "show")">
+
+    <div class="row-sb" style="width: 350px; margin-top :0px">
+        <div class="row gap">
+
+            <div class="column">
+                <div class="row gap dt" style="padding: 5px 14px;">
+                    <p style="font-size: 0.9rem;"> @YokaiPatcher.ShortenAddress(connectedAddress)  </p>
+                    <img height="13" src="media/copy.svg" alt="" @onclick="Copy">
+                </div>
+            </div>
+        </div>
+
+        <div class="row-sb">
+            <div class="row gap">
+                <p>Network</p>
+                <div class="row dt gap"> <img height="18" src="media/ftm.svg" alt=""> Fantom</div>
+            </div>
+        </div>
+    </div>
+    @* @if (profileNft != null)
+    {
+    <Nft WithFooter="false" NFT="profileNft" Class="nav-profile-wallet" ShouldRedirect="false" ShouldLoad="false" />
+    }
+    else
+    {
+    <div class="nav-profile">
+    <img height="100%" src="media/profile_default.png" alt="">
+    </div>
+    } *@
+
+    <div class="column-" style="margin-top: 30px;">
+        <p style="font-size: 1rem; margin-bottom:6px;">Total Balance</p>
+        <h2 style="font-family:'Roboto'"> $@string.Format("{0:N2}",FTMprice+WFTMprice) </h2>
+    </div>
+    <div class="token-balance row-sb">
+        <div class="row gap">
+            <img height="35" src="media/ftm_dark.svg" alt="">
+            <div class="column" style="margin-top: -5px;">
+                <div>FTM</div>
+                <p>Fantom</p>
+            </div>
+        </div>
+        <div class="column">
+            <div>@balanceFTM</div>
+            <p style="text-align: right;">$@string.Format("{0:N2}",FTMprice)</p>
+        </div>
+    </div>
+    <div class="token-balance row-sb">
+        <div class="row gap">
+            <img height="35" src="media/ftm_purple.svg" alt="">
+            <div class="column" style="margin-top: -5px;">
+                <div>wFTM</div>
+                <p>Wrapped Fantom</p>
+            </div>
+        </div>
+        <div class="column">
+            <div>@balanceWFTM</div>
+            <p style="text-align: right;">$@string.Format("{0:N2}",WFTMprice) </p>
+        </div>
+    </div>
+
+
+    @* <div class="sign-out btn-x">Sign out</div>*@
+</div>
+
+<div class="modal-bg @(WalletHidden ? "hidebg": "showbg")"
+     style="z-index: 1000;"
+     @onclick="WalletModal">
+</div>
+@if (isConnected && !isFantom && loaded)
+{
+    <ChainAlert />
+}
+
+@code {
+    private bool isConnected { get; set; }
+    private bool isFantom { get; set; }
+    private string connectedAddress;
+    private bool NavbarHidden { get; set; } = true;
+    private bool WalletHidden { get; set; } = true;
+    private Profile profile;
+    private Yokai profileNft;
+    private PriceResponse? fantomPrice;
+
+    private BigInteger balanceWFTM;
+    private double? WFTMprice;
+    private BigInteger balanceFTM;
+    private double? FTMprice;
+    private bool loaded;
+    private class NotifsPayload
+    {
+        public NotifsPayload(int pId, DateTime pDate, string pMessage, string pName, bool pRead, int eventId)
+        {
+            id = pId;
+            date = pDate;
+            message = pMessage;
+            name = pName;
+            read = pRead;
+            EventId = eventId;
+        }
+
+        public readonly int id;
+        public readonly DateTime date;
+        public readonly string message;
+        public readonly string name;
+        public bool read;
+        public int EventId;
+    }
+    private List<NotifsPayload> notifsPayloads;
+    //private List<RewardValue> chests;
+    private ConnectedProfileData profileData;
+    public record ConnectedProfileData(Yokai profileNft, int level, string name);
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasMetaMask = await _metaMaskService.HasMetaMask();
+        if (!hasMetaMask) return;
+        isConnected = await _metaMaskService.IsSiteConnected();
+        fantomPrice = await _http.GetFromJsonAsync<PriceResponse>("https://api.coingecko.com/api/v3/simple/price?ids=fantom&vs_currencies=USD");
+        _stateContainer.FantomPrice = fantomPrice?.fantom?.usd ?? 0;
+
+        if (isConnected)
+        {
+            (long chainId, Chain chain) = await _metaMaskService.GetSelectedChain();
+            isFantom = chainId == 250;
+            connectedAddress = await _metaMaskService.GetSelectedAddress();
+            var notifs = _http.GetFromJsonAsync<List<Notification>>($"Profile/GetNotifcations?address={connectedAddress}");
+            notifsPayloads = new();
+
+            _stateContainer.CurrentConnectedAddress = connectedAddress;
+            Console.WriteLine($"Connected with {connectedAddress}");
+            _stateContainer.CurrentChainId = (int)chainId;
+            var hexWFTMBalance = await _jsRuntime.InvokeAsync<string>("RecoverLib.GetWFTMBalance");
+
+            balanceWFTM = BigInteger.Parse($"0{hexWFTMBalance.Substring(2)}", System.Globalization.NumberStyles.AllowHexSpecifier) / 1000000000000000000;
+            WFTMprice = (double)balanceWFTM * _stateContainer.FantomPrice;
+
+            var hexFTMBalance = await _jsRuntime.InvokeAsync<string>("RecoverLib.getBalance", _stateContainer.CurrentConnectedAddress);
+
+            balanceFTM = BigInteger.Parse($"0{hexFTMBalance.Substring(2)}", System.Globalization.NumberStyles.AllowHexSpecifier) / 1000000000000000000;
+            FTMprice = (double)balanceFTM * _stateContainer.FantomPrice;
+            var key = "connectedProfileNft";
+            if (await _storageService.ContainKeyAsync(key))
+            {
+                profileData = JsonConvert.DeserializeObject<ConnectedProfileData>(await _storageService.GetItemAsync(key));
+                profileNft = profileData.profileNft;
+            }
+            else
+            {
+                profile = await _http.GetFromJsonAsync<Profile>($"Profile/GetProfileOf?pAddress={connectedAddress}");
+                if (profile?.Nft != null)
+                    profileNft = new Yokai(profile.Nft.TokenId, profile.Nft.Collection.Address);
+
+                profileData = new ConnectedProfileData(profileNft, profile.Level, profile.Name);
+                await _storageService.SetItemAsync(key, JsonConvert.SerializeObject(profileData));
+
+            }
+            //chests = await _http.GetFromJsonAsync<List<RewardValue>>($"Marketplace/GetRewardChestFor?userAddress={connectedAddress}");
+            (await notifs).ForEach(x => notifsPayloads.Add(new(x.Id, x.Date, string.Format(x.Event.Message, x.Data.Split(',')), x.Event.Nom, x.Read, x.EventId)));
+        }
+        await _metaMaskService.ListenToEvents();
+        MetaMaskService.AccountChangedEvent += MetaMaskServiceOnAccountChangedEvent;
+        MetaMaskService.ChainChangedEvent += MetaMaskServiceOnChainChangedEvent;
+        loaded = true;
+
+    }
+
+    private async Task Copy() => await _jsRuntime.InvokeVoidAsync("RecoverLib.copyText", connectedAddress);
+
+    private Task MetaMaskServiceOnChainChangedEvent((long, Chain) arg)
+    {
+        isFantom = arg.Item1 == 250;
+        _navManager.NavigateTo(_navManager.Uri, forceLoad: true);
+        return Task.CompletedTask;
+    }
+
+    private async Task MetaMaskServiceOnAccountChangedEvent(string arg)
+    {
+        var key = "connectedProfileNft";
+        await _storageService.RemoveItemAsync(key);
+        _navManager.NavigateTo(_navManager.Uri, forceLoad: true);
+        //return Task.CompletedTask;
+    }
+    private bool resolved;
+    private bool firsttime = true;
+    private async Task ConnectMetaMaskAsync()
+    {
+        try
+        {
+            if (!firsttime && !resolved)
+            {
+                _navManager.NavigateTo(_navManager.Uri, true);
+                return;
+            }
+            firsttime = false;
+
+            var result = await _jsRuntime.InvokeAsync<bool>("RecoverLib.requestPermissions");
+            if (!result)
+                _navManager.NavigateTo(_navManager.Uri, true);
+            //await _metaMaskService.ConnectMetaMask();
+            resolved = true;
+        }
+        catch (UserDeniedException)
+        {
+            Console.WriteLine("Canceling connection");
+        }
+        catch (JSException)
+        {
+            Console.WriteLine("User denied connection");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    private void ToggleNavbar()
+    {
+        NavbarHidden = !NavbarHidden;
+        StateHasChanged();
+    }
+
+    private void WalletModal()
+    {
+        WalletHidden = !WalletHidden;
+        StateHasChanged();
+    }
+
+    private async Task ClearAllNotifications()
+    {
+        await _http.DeleteAsync($"Profile/ClearAllNotifications?address={connectedAddress}");
+        notifsPayloads.Clear();
+    }
+
+    private async Task ReadNotif(int notifId)
+    {
+        var n = notifsPayloads.Where(x => !x.read).SingleOrDefault(x => x.id == notifId);
+        if (n is null)
+        {
+            Console.WriteLine("not found");
+            return;
+        }
+        Console.WriteLine("found");
+        n.read = true;
+        await _http.PatchAsync($"Profile/ReadNotification?address={connectedAddress}&notificationId={notifId}", null);
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+    private string keywords;
+    private SearchByKeywordsResult? searchResult;
+    private bool searchModalHidden = true;
+    private async Task SearchByKeywords()
+    {
+        if (keywords.Length < 3)
+            return;
+
+        searchResult = await _http.GetFromJsonAsync<SearchByKeywordsResult>($"Yokai/SearchWithKeywords?pKeywords={keywords}");
+        ShowSearchModal();
+    }
+
+    private void ShowSearchModal() => searchModalHidden = false;
+    private void HideSearchModal() => searchModalHidden = true;
+
+    protected override void OnInitialized()
+    {
+        _stateContainer.OnChange += StateHasChanged;
+    }
+
+    private async Task clickOnResearchResultAsync()
+    {
+        keywords = "";
+        HideSearchModal();
+    }
+}

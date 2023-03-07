@@ -1,0 +1,11 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+    "type": "blazorwasm",
+    "request": "attach",
+    "name": "Attach and Debug",
+    "url": "https://localhost:7268"
+        }
+    ]
+}

@@ -1,0 +1,199 @@
+@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Server
+@using BlazorWebAssymblyWeb3.Shared.Forms
+
+@inject StateContainer _stateContainer;
+@inject IJSRuntime _jsRuntime
+@inject AlertMessageService _alertMessageService;
+@inject HttpClient _http;
+@inject Helper _helper;
+
+<style>
+   .button-offer{
+  border-radius: 50px;
+  width: 250px;
+  align-self: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+</style>
+<div class="modal market-orders column gap--">
+ <h2>Received Offer</h2>
+ <div class="token-balance row-sb" style="width: 100%;">
+        <div class="row gap">
+            <img height="35" src="@($"https://todai.world/images/{NFT.ContractAddress}/{NFT.TokenId}")" alt="">
+             <div class="column" style="margin-top: -5px;">
+                 <div class="row" style="gap:2px">Bloody Yokai 319 </div>
+                 <p>YokaiChain</p>
+             </div>
+        </div>
+        <div class="column">
+            <div>@Offer.Price FTM</div>
+            <p style="text-align: right;"> $ @string.Format("{0:N2}",_stateContainer.FantomPrice*Offer.PriceInt)</p>
+        </div>
+    </div>
+   <div class="column" style="font-size: 1rem;">             
+        <div class="row-sb">
+           <p>Service fees</p>
+            <div>3%</div>
+        </div>
+        <div class="row-sb">
+           <p>Royalties</p>
+            <div>6%</div>
+        </div>
+        <div class="row-sb">
+           <p>Total earnings</p>
+            <div>@Offer.Price FTM</div>
+        </div>  
+   </div>
+   <span></span>
+       <div class="" style="margin-bottom:0;">
+        <p style="text-align: center; font-size:12px"> You are about to sell your <i> @Offer.Nft.Name</i> <img height="13" src="media/whitelisted.svg" alt=""> for  <i>@Offer.Price FTM</i> </p>
+    </div> 
+    <div class="row gap">
+
+        @if (isNFTApproved)
+        {
+            @if (isWFTMApproved)
+            {
+                <button class="main-button" style="width: 50% ;" @onclick="AcceptOffer">Accept Offer</button>
+            }
+            else if (isTransactionRunning)
+            {
+                <button class="main-button main-btn-load row gap" disabled style="padding-right: 26px;">
+                    <img height="26" src="media/loader.svg"> Approve WFTM
+                </button>
+            }
+            else
+            {
+                <button class="main-button" style="width: 50% ;" @onclick="ApproveWFTM">Approve WFTM</button>
+            }
+            @*<button class="button-edit button-offer" style="width: 50% ; margin-top:10px; font-size:0.9rem">Decline Offer</button>*@
+
+        }
+        else if (isTransactionRunning)
+        {
+            <button class="main-button main-btn-load row gap" disabled style="padding-right: 26px;">
+                <img height="26" src="media/loader.svg"> Approve NFT
+            </button>
+        }
+        else
+        {
+            <button class="main-button" style="width: 50%;" @onclick="ApproveOffer">Approve NFT</button>
+        }
+          <button class="button-edit button-offer" style="width: 50% ;" @onclick="DeclineOffer">Decline Offer</button>
+
+           @* <button class="main-button" >Continue</button> *@
+    </div>
+
+</div>
+<div class="modal-bg" @onclick="close"></div>
+@code{
+
+    [Parameter]
+    public OfferListed Offer {get;set;}
+
+    [Parameter]
+    public Yokai NFT { get; set; }
+
+    [Parameter]
+    public Func<Task>? OnClose { get; set; }
+
+    private bool isNFTApproved;
+    private bool isWFTMApproved;
+    private bool isTransactionRunning;
+    private bool confirming;
+    private bool isDone;
+    private bool success;
+    private string hash;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var wantedNft = Offer.seaportOrder!.consideration.First(x => x.identifierOrCriteria > 0);
+
+        isNFTApproved = await _jsRuntime.InvokeAsync<bool>("RecoverLib.IsMarketplaceContractApproved", wantedNft.token, NFT.TokenId);
+        isWFTMApproved = await _jsRuntime.InvokeAsync<bool>("RecoverLib.IsWFTMApprovedForMarketplace");
+    }
+
+    private async Task close()
+    {
+        if (isTransactionRunning)
+            return;
+        await OnClose?.Invoke();
+    }
+
+    private async Task DeclineOffer()
+    {
+        var guid = await _http.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={_stateContainer.CurrentConnectedAddress}");
+
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+
+        if (!transaction.IsSuccess) return;
+
+        var favorite = await _http.GetStringAsync($"Marketplace/DeclineOffer?offerId={Offer.Id}&signatureHash={transaction.Hash}&address={_stateContainer.CurrentConnectedAddress}");
+    }
+
+    private async Task ApproveOffer()
+    {
+        var wantedNft = Offer.seaportOrder!.consideration.First(x => x.identifierOrCriteria > 0);
+        var reference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.ApproveMarketplaceContractForTokenID", wantedNft.token, NFT.TokenId, reference);
+
+    }
+
+    private async Task ApproveWFTM()
+    {
+        var reference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.ApproveWFTMForMarketplace", reference);
+    }
+
+    private async Task AcceptOffer()
+    {
+        var reference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.fulfillOfferOrder", Offer.OrderJson, Offer.Signature, reference);
+    }
+
+    [JSInvokable]
+    public void WaitingTransaction()
+    {
+        isTransactionRunning = true;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task TransactionDone(bool isSuccess, string pHash, string pError = "")
+    {
+        isTransactionRunning = false;
+        if (isSuccess)
+        {
+            success = true;
+            hash = pHash;
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Offer accepted!");
+        }
+        else
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+    }
+
+    [JSInvokable]
+    public async Task ApproveResult(bool pIsSuccess, string pError = "")
+    {
+        if (!isNFTApproved)
+        {
+            isNFTApproved = true;
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "NFt approved!");
+        }
+        else if (!isWFTMApproved){
+            isWFTMApproved = true;
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "WFTM approved!");
+        }
+
+        isTransactionRunning = false;
+        await InvokeAsync(StateHasChanged);
+        if (!pIsSuccess)
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+    }
+}

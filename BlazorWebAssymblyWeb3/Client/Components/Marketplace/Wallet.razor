@@ -1,0 +1,668 @@
+@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@using BlazorWebAssymblyWeb3.Server
+@using BlazorWebAssymblyWeb3.Shared
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using System.Text
+@using static BlazorWebAssymblyWeb3.Client.Components.Global.FilterAttribute
+@using static BlazorWebAssymblyWeb3.Client.Components.Global.OrderBy
+@inject IJSRuntime _jsRuntime;
+@inject HttpClient _http;
+
+
+<style>
+.gallery-tool-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 0.96rem;
+  gap: 8px;
+  padding: 16px;
+  padding-left: 20px;
+}
+
+.nft-display{
+    width: 100%;
+    flex-grow: 1;
+
+}
+.nft-gallery{
+    height: 100%;
+    max-height: unset;
+    padding-bottom: 100px;
+
+}
+.nft-item{
+    height: min-content;
+}
+
+
+
+.collection-gallery{
+    height: 100%;
+    background: #2A1F37;
+
+}
+
+.nft-gallery::-webkit-scrollbar {
+  width: 5px;
+  background-color: #11151f;
+}
+
+.items-grow{
+    height: 100% !important;
+}
+.dt{
+    padding: 5px 12px 5px 12px;
+}
+.modal-wallet{
+    width: 90vw; 
+    height: 90vh;
+    padding: 0;
+    background:#2A1F37;
+    backdrop-filter: none;
+    z-index: 1002;
+  
+}
+                .modal-wallet .nft-list{
+                   height: 100%;
+                   overflow: hidden !important;
+                }
+.nft-item-footer{
+    display: none;
+}
+.search-bar {
+  color: whitesmoke;
+  background: rgba(255, 255, 255, 0.116);
+  border-radius: 3px;
+  border: none;
+  padding-left: 10px;
+  transition: 0.6s;
+  font-family: "Titillium Web";
+}
+
+.hide > div {
+  display: none;
+}
+.hide{width:50px!important;}
+
+ @@media only screen and (max-width : 650px) {
+
+ .hide{width:0px!important;}
+
+ }
+
+
+.hide > .filter-tab {
+  display: flex;
+}
+.nft-gallery::-webkit-scrollbar {
+  display: none ;
+}
+
+</style>
+
+    <div class=" @(IsModal?"modal modal-wallet":"")" >
+
+        <div class="collection-gallery">
+            <div class="filter-bar ease @(filterHidden ? "hide" : "show") ">
+                <div class="filter-tab row-sb ease" @onclick="toggleSidebar" style="cursor:pointer;">
+                    <div class="filters-title row-sb">
+                        <img src="media/filter_icon.svg" alt="filter"
+                         style="margin-right:10px; cursor:pointer;"> Filters
+                    </div>
+                    <a>
+                        <div>
+                        </div>
+                    </a>
+                </div>
+                <div class="column">
+                    <div class="attribute-list " style="height:100%">
+                        @if (collectionBalances != null)
+                        {
+                            <div class="category">
+                                @if (collectionBalances?.Count > 0 && nftInfos?.Count > 0) {
+                                    <CollapsableDiv Name="Collections" Count="@collectionBalances.Count" Active="string.IsNullOrWhiteSpace(filters)?0:1">
+                                        @foreach (var collection in collectionBalances)
+                                        {
+                                            if (!nftInfos.ContainsKey(collection.CollectionAddress.ToLower())) continue;
+                                            var col = nftInfos[collection.CollectionAddress.ToLower()].First();
+                                                <FilterAttribute Category="Collection" classActive="@(string.Equals(filters, collection.CollectionAddress, StringComparison.InvariantCultureIgnoreCase))" Value="@collection.CollectionAddress" Name="@col.Collection.Name" OnFilterClick="Callback" Number="collection.Balance" Stats="@((double)collection.Balance / collectionBalances.Sum(x => x.Balance) * 100)"/>
+                                        }
+                                    </CollapsableDiv>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="nft-display column">
+                <div class="gallery-tool-bar-c row-sb " style="width: 100%; padding-right:30px;">
+                    <div class="gallery-tool-bar desktop">
+                        <button class="clear row-- tooltip-c">
+                            <img height="18" src="media/refresh.svg" alt="">
+                            <div class="tooltip">
+                                Refresh filters
+                            </div>
+                        </button>
+                        @* <div class="row-- grid-buttons desktop ">
+                            <button @onclick="SmallGrid" style="border-top-left-radius: 5px;border-bottom-left-radius: 5px; @(!small ? "border: 1px solid #ffffff7d;" : "") ">
+                                <img height="18" src="media/smallgrid_icon.svg" alt="">
+                            </button>
+                            <button @onclick="SmallGrid" style="border-top-right-radius: 5px;border-bottom-right-radius: 5px; @(small ? "border: 1px solid #ffffff7d;" : "")">
+                                <img height="18" src="media/largegrid_icon.svg" alt="">
+                            </button>
+                        </div> *@
+                        <div class="search-nft desktop">
+                        <input class="search-bar" type="search" placeholder="Search ID" style="height: 38px;" @bind="filter" @bind:event="oninput" @onkeyup="Enter">
+                        <button class="button-edit">look up</button>
+                    </div>
+                        <div class="results desktop">
+                            <div style=" opacity: 0.7;">
+                                @(NFTSFiltered?.Count > 0 ? NFTSFiltered.Count : sold && solds != null ? solds.Count : (onSale && listings != null ? listings.Count : collectionBalances?.Sum(x => x.Balance))) Results 
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="row gap--">                 
+                        <button class="clear mobile row-- " @onclick="toggleSidebar">
+                        <img height="18" src="media/filter_icon2.svg" alt="">
+                    </button>
+                             <button class="clear row-- tooltip-c mobile">
+                            <img height="18" src="media/refresh.svg" alt="">
+                            <div class="tooltip">
+                                Refresh filters
+                            </div>
+                        </button>
+                                     <div class="market-display row desktop">
+                        <label for="all" class="@(!onSale && !sold?"active-gradient":"") row-- cursor " style="gap: 4px;">
+                            <input type="radio" class="radio" id="all" value="1" name="market-display" @onchange="() => ToggleFilter(1)" checked="@(!onSale && !sold && !bought)">
+                                <span>All</span>
+                            </label>
+                            <label for="on-sale" class="@(onSale?"active-gradient":"") row-- cursor " style="gap: 4px;">
+                            <input type="radio" class="radio" id="on-sale" value="1" name="market-display" @onchange="() => ToggleFilter(2)" checked="@onSale" />
+                       
+                                <span>On Sale</span>
+                            </label>
+                                     <label for="bought" class=" row-- cursor " style="gap: 4px;">
+                            <input type="radio" class="radio" id="bought" value="1" name="market-display" @onchange="() => ToggleFilter(4)" checked="@bought"/>
+                          
+                                <span>Bought</span>
+                            </label>
+                        <label for="sold" class="@(sold?"active-gradient":"") row-- cursor " style="gap: 4px;">
+                            <input type="radio" class="radio" id="sold" value="1" name="market-display" @onchange="() => ToggleFilter(3)" checked="@sold" />
+                          
+                                <span>Sold</span>
+                            </label>
+                        </div>
+                        <OrderBy WithRarity="true" OnOrderByChange="OnOrderByChanged" />
+
+                        @* <div class="row" style="padding: 0px 1px;z-index: 1; width:107px; cursor:pointer">
+
+                            <input type="checkbox" class="cb-toggle">
+                            <div class="@(marketplace?"dt-not-active":"dt-active")" onclick="@ToggleMarket">
+                                <p>Art</p>
+                            </div>
+                            <div class="@(marketplace?"dt-active":"dt-not-active")" onclick="@ToggleMarket">
+                                <p>Market</p>
+                            </div>
+                        </div> *@
+                    </div>
+
+                </div>
+                <div class="nft-list">
+                    <div class="nft-gallery" style="overflow-y:scroll;">
+                        @{
+                            @if (bought)
+                            {
+                                <div class="nft-gallery" style="height:100%;">
+                                    <InfiniteScrolling ItemsProvider="@LoadBought">
+                                        <ItemTemplate Context="bought">
+                                            <SoldItem NFT="bought.Yokai" soldInfos="bought" />
+                                        </ItemTemplate>
+                                        <LoadingTemplate>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                        </LoadingTemplate>
+                                    </InfiniteScrolling>
+                                </div>
+                            }
+                            else if (sold)
+                            {
+                      
+                                    <InfiniteScrolling ItemsProvider="@LoadSold">
+                                        <ItemTemplate Context="sold">
+                                        <SoldItem NFT="sold.Yokai" soldInfos="sold" />
+                                        </ItemTemplate>
+                                        <LoadingTemplate>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                            <div class="nft-item"></div>
+                                        </LoadingTemplate>
+                                    </InfiniteScrolling>
+                  
+                            }
+                            else if (!string.IsNullOrWhiteSpace(filters) || (!string.IsNullOrWhiteSpace(filter) && filter.Length > 2))
+                            {
+                                @if (NFTSFiltered?.Count > 0)
+                                {
+                                    <InfiniteScrolling @ref="childFiltered" ItemsProvider="@LoadYokai" CountToLoad="30">
+                                        <ItemTemplate Context="yokai">
+                                            @if (marketplace)
+                                            {
+                                                var nftInfo = nftInfos[yokai.ContractAddress].FirstOrDefault(x => x.TokenId == yokai.TokenId);
+                                                <MarketItem MyWallet="@IsCurrentConnectedProfile" NftInfos="nftInfo" AssetListed="@(listings.ContainsKey(yokai.TokenId) ? listings[yokai.TokenId] : null)" NFT="yokai" IsFavorited="@(nftInfo.Favorites.Count > 0)" CollectionId="nftInfo.Collection.Id" />
+                                            }
+                                            else
+                                            {
+                                                <Nft NFT="yokai" WithFooter="false" small="@small" IsCurrentConnectedProfile="@IsCurrentConnectedProfile" ConnectedAddress="@UserAddress" OnClick="OnClick" ShouldLoad="false" />
+                                            }
+
+
+                                        </ItemTemplate>
+                                        <LoadingTemplate>
+                                            <div class="nft-item load themed-box"></div>
+                                            <div class="nft-item load themed-box"></div>
+                                            <div class="nft-item load themed-box"></div>
+                                        </LoadingTemplate>
+                                    </InfiniteScrolling>
+                                }
+                            }
+                            else if (NFTS.Count > 0)
+                            {
+                                <InfiniteScrolling @ref="child" ItemsProvider="@LoadYokai" CountToLoad="30">
+                                    <ItemTemplate Context="yokai">
+                                        @if (marketplace)
+                                        {
+                                            var nftInfo = nftInfos[yokai.ContractAddress].FirstOrDefault(x => x.TokenId == yokai.TokenId);
+                                            <MarketItem MyWallet="@IsCurrentConnectedProfile" NftInfos="nftInfo" AssetListed="@(listings.ContainsKey(yokai.TokenId) ? listings[yokai.TokenId] : null)" NFT="yokai" IsFavorited="@(nftInfo.Favorites.Count > 0)" CollectionId="nftInfo.Collection.Id" />
+                                        }
+                                        else
+                                        {
+                                            <Nft NFT="yokai" WithFooter="false" IsCurrentConnectedProfile="@IsCurrentConnectedProfile" ConnectedAddress="@UserAddress" OnClick="OnClick" ShouldLoad="false" />
+                                        }
+                                    </ItemTemplate>
+                                    <LoadingTemplate>
+                                        <div class="nft-item load"></div>
+                                        <div class="nft-item load"></div>
+                                        <div class="nft-item load"></div>
+                                    </LoadingTemplate>
+                                </InfiniteScrolling>
+                            }
+                        }
+                    </div>
+        
+                </div>
+                           @if (!filterHidden)
+            {
+                    <div class="display-bg mobile" @onclick="toggleSidebar"></div>
+            }
+                        
+            </div>
+        </div>
+    </div>
+
+@if (IsModal)
+{
+    <div class="modal-bg" @onclick="() => OnClick(null)"></div>
+} 
+
+@code{
+
+    [Parameter]
+    public string UserAddress { get; set; }
+
+    [Parameter]
+    public bool IsCurrentConnectedProfile { get; set; }
+
+    [Parameter]
+    public EventCallback<WalletChoseData> OnNftChoice { get; set; }
+
+    [Parameter] 
+    public bool IsModal { get; set; } = true;
+
+    private bool filterHidden = true;
+
+    public record WalletChoseData(Yokai Nft, Collection Collection);
+    private List<CollectionBalances> collectionBalances;
+    //private List<Collection> collections;
+    private List<Yokai> NFTS = new();
+    private List<Yokai> Loaded = new();
+    private InfiniteScrolling<Yokai> child;
+    private InfiniteScrolling<Yokai> childFiltered;
+    private List<Favorite> favorites;
+    //private Dictionary<string, favoritedContext> favorited;
+    private Dictionary<int, AssetListing> listings = new();
+    private record class favoritedContext(List<int> ids, int collectionId);
+    private bool small;
+    private Dictionary<string,List<Nft>> nftInfos;
+    private List<Yokai> NFTSFiltered = new();
+    private string filters = "";
+
+    private record struct NftsIds(Dictionary<string,int[]> collectionsIds);
+
+    protected override async Task OnInitializedAsync()
+    {
+        //collections = await _http.GetFromJsonAsync<List<Collection>>("Yokai/GetAllMinimalCollection");
+        var collectionBalancesTask = _jsRuntime.InvokeAsync<List<CollectionBalances>>("RecoverLib.GetBalanceOflistedOf", UserAddress);
+        //favorites = await _http.GetFromJsonAsync<List<Favorite>>($"Profile/GetFavoritesOf?pUserAddress={UserAddress}");
+        var assetListingsTask = _http.GetFromJsonAsync<List<AssetListing>>($"Profile/GetListingsOf?pUserAddress={UserAddress}");
+        //favorited = new();
+        var allNftIds = new Dictionary<string, int[]>();
+        //foreach (var group in favorites.GroupBy(x => x.Nft.Collection.Address))
+        //{
+        //    var tokenids = group.Select(y => y.TokenId);
+        //    //allNftIds.Add(group.First().CollectionId, tokenids.ToArray());
+
+        //    favorited.Add(group.Key, new favoritedContext(tokenids.ToList(), group.First().CollectionId));
+        //}
+        collectionBalances = await collectionBalancesTask;
+        foreach (var collectionBalance in collectionBalances)
+        {
+            //var collection = collections.First(x => x.Address.ToLower() == collectionBalance.CollectionAddress.ToLower());
+            //collectionBalance.Name = collection.Name;
+            //Console.WriteLine($"{collection.Name} => {collectionBalance.Balance}");
+            if (collectionBalance.Balance == 0) continue;
+            //if(!favorited.ContainsKey(collection.Address))
+            //    favorited.Add(collection.Address, new favoritedContext(new List<int>(), collection.Id));
+
+            var ids = await _jsRuntime.InvokeAsync<List<int>>("RecoverLib.GetOwnedNFTIdOfCollection", collectionBalance.CollectionAddress, UserAddress);
+            allNftIds.Add(collectionBalance.CollectionAddress.ToLower(),ids.ToArray());
+            //NFTS.AddRange(ids.Select(x => new Yokai(x, collectionBalance.CollectionAddress)));
+
+        }
+        var allNftsData = await _http.PostAsJsonAsync<GetAllNftsFromPayload>("Profile/GetAllNftsFrom", new GetAllNftsFromPayload(allNftIds,UserAddress));
+
+        var datas = await allNftsData.Content.ReadFromJsonAsync<GetAllNftsFromResponse>();
+
+        nftInfos = datas.pNfts.GroupBy(x => x.Collection.Address).ToDictionary(x => x.Key, x => x.ToList());
+
+        foreach (var nftInfo in nftInfos)
+        {
+            NFTS.AddRange(nftInfo.Value.Select(x => new Yokai(x.TokenId, x.Collection.Address)
+            {
+                Data = new YokaiData 
+                {
+                    name = x.Name ?? "",
+                    attributes = x.Attributes.Select(y => new NftAttributes{ trait_type = "",value=y.AttributeTypeOption.OptionValue}).ToArray()
+                },
+                Rank = x.Rarity?.Rank ?? 0
+            })); 
+        }
+
+
+        var assetListings = await assetListingsTask;
+        if (assetListings is null) return;
+
+        //var sales = await _paintswapService.GetSalesForCollections(CollectionConfig.Address);
+
+        //listings.Clear();
+        assetListings.ForEach(x =>
+        {
+            listings.Add(x.TokenId, x);
+        });
+
+        Loaded = new List<Yokai>();
+        if (child != null)
+            await child.Reset(true);
+    }
+
+    private async Task ToggleFilter(int filter)
+    {
+        switch (filter)
+        {
+            case 1:
+                onSale = false;
+                bought = false;
+                sold = false;
+                await UpdateSource();
+                break;
+            case 2:
+                sold = false;
+                bought = false;
+                onSale = true;
+                await UpdateSource();
+                break;
+            case 3:
+                onSale = false;
+                bought = false;
+                sold = true;
+                await UpdateSource();
+
+                break;
+            case 4:
+                onSale = false;
+                sold = false;
+                bought = true;
+                break;
+        }
+    }
+
+    public async Task UpdateSource() 
+    {
+        if (onSale)
+        {
+            IEnumerable<KeyValuePair<int, AssetListing>> l = listings.AsEnumerable();
+            switch (orderByMode)
+            {
+                case OrderByMode.MostRecent:
+                    l = l.OrderByDescending(x => x.Value.CreationDate);
+                    break;
+                case OrderByMode.Oldest:
+                    l = l.OrderBy(x => x.Value.CreationDate);
+                    break;
+                case OrderByMode.PriceLowToHigh:
+                    l = l.OrderBy(x => x.Value.PriceInt);
+                    break;
+                case OrderByMode.PriceHighToLow:
+                    l = l.OrderByDescending(x => x.Value.PriceInt);
+                    break;
+            }
+
+            var test = l.Select(x => 
+            {
+                var nft = nftInfos[x.Value.CollectionAddress].FirstOrDefault(y => y.TokenId == x.Value.TokenId);
+                if(nft is null) return null;
+                return new Yokai(x.Value.TokenId, x.Value.CollectionAddress)
+                {
+
+                    Data = new YokaiData
+                    {
+                        name = nft.Name ?? "",
+                        attributes = nft.Attributes.Select(y => new NftAttributes { trait_type = "", value = y.AttributeTypeOption.OptionValue }).ToArray()
+                    },
+                    Rank = nft.Rarity?.Rank ?? int.MaxValue
+                };
+            
+            });
+            NFTS = test.ToList();
+        }
+        else if (sold)
+        {
+
+        }
+        else
+        {
+            NFTS = new();
+            
+            foreach (var nftInfo in nftInfos)
+            {
+                NFTS.AddRange(nftInfo.Value.Select(x => new Yokai(x.TokenId, x.Collection.Address)
+                    {
+                        Data = new YokaiData
+                        {
+                            name = x.Name ?? "",
+                            attributes = x.Attributes.Select(y => new NftAttributes { trait_type = "", value = y.AttributeTypeOption.OptionValue }).ToArray()
+                        },
+                        Rank = x.Rarity?.Rank ?? int.MaxValue
+                    }));
+            }
+            switch (orderByMode)
+            {
+                
+                @*case OrderByMode.PriceLowToHigh:
+                    NFTS = NFTS.OrderBy(x => x.Value.PriceInt);
+                    break;
+                case OrderByMode.PriceHighToLow:
+                    NFTS = NFTS.OrderByDescending(x => x.Value.PriceInt);
+                    break;*@
+                case OrderByMode.Rarity:
+                    NFTS = NFTS.OrderBy(x => x.Rank).ToList();
+                    break;
+            }
+        }
+
+        Loaded = new List<Yokai>();
+        if (child != null)
+            await child.Reset(true);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private bool marketplace = true;
+    private bool onSale;
+    private bool sold;
+    private bool bought;
+    private void SmallGrid() => small = !small;
+    private void toggleSidebar() => filterHidden = !filterHidden;
+    private void ToggleMarket() => marketplace = !marketplace;
+    private OrderByMode orderByMode = OrderByMode.MostRecent;
+
+    private async Task OnOrderByChanged(OrderByMode pMode)
+    {
+        orderByMode = pMode;
+        await UpdateSource();
+    }
+
+    private async Task ToggleOnSale(ChangeEventArgs pArg)
+    {
+        var check = (bool)pArg.Value!;
+        onSale = check;
+
+        await UpdateSource();
+    }
+
+    private async ValueTask<ItemsProviderResult<Yokai>> LoadYokai(ItemsProviderRequest request)
+    {
+        var numEmployees = Math.Min(request.Count, NFTS.Count - request.StartIndex);
+        var toLoad = NFTSFiltered?.Count > 0 ? NFTSFiltered.Skip(request.StartIndex).Take(+numEmployees).ToList() : NFTS.Skip(request.StartIndex).Take(+numEmployees).ToList();
+        var toLoadAndDownload = toLoad.Where(x => !x.IsDownloaded && !x.IsNonExistent).ToList();
+        Loaded.AddRange(toLoadAndDownload);
+        return new ItemsProviderResult<Yokai>(toLoad.Where(x => !x.IsNonExistent), NFTS.Count(x => !x.IsNonExistent));
+    }
+
+    private List<OrderFulfilledHistory>? solds;
+    private List<OrderFulfilledHistory>? boughts;
+
+    private async ValueTask<ItemsProviderResult<OrderFulfilledHistory>> LoadSold(ItemsProviderRequest request)
+    {
+
+
+        var numEmployees = Math.Min(request.Count, NFTS.Count - request.StartIndex);
+
+        if(solds is null)
+        {
+            solds = await _http.GetFromJsonAsync<List<OrderFulfilledHistory>>($"Marketplace/GetSoldForUser?userAddress={UserAddress}");
+            if(solds != null){
+                solds = solds.OrderByDescending(x => x.PriceInt).ToList();
+                Console.WriteLine($"solds => {solds.Count}");
+            }
+        }
+        if (solds is null) return new ItemsProviderResult<OrderFulfilledHistory>();
+        await InvokeAsync(StateHasChanged);
+        //Loaded.AddRange(toLoadAndDownload);
+        return new ItemsProviderResult<OrderFulfilledHistory>(solds, solds.Count);
+    }
+
+    private async ValueTask<ItemsProviderResult<OrderFulfilledHistory>> LoadBought(ItemsProviderRequest request)
+    {
+        var numEmployees = Math.Min(request.Count, NFTS.Count - request.StartIndex);
+
+        if(boughts is null)
+        {
+            boughts = await _http.GetFromJsonAsync<List<OrderFulfilledHistory>>($"Marketplace/GetBoughtForUser?userAddress={UserAddress}");
+            if(boughts != null){
+                boughts = boughts.OrderByDescending(x => x.PriceInt).ToList();
+                Console.WriteLine($"boughts => {boughts.Count}");
+            }
+        }
+        if (boughts is null) return new ItemsProviderResult<OrderFulfilledHistory>();
+        await InvokeAsync(StateHasChanged);
+        //Loaded.AddRange(toLoadAndDownload);
+        return new ItemsProviderResult<OrderFulfilledHistory>(boughts, boughts.Count);
+    }
+
+    private async Task OnClick(Yokai arg)
+    {
+        if(arg is null)
+            await OnNftChoice.InvokeAsync(new WalletChoseData(null, null));
+        else
+            await OnNftChoice.InvokeAsync(new WalletChoseData(arg, nftInfos[arg.ContractAddress.ToLower()].First().Collection));
+    }
+
+    private void Callback(FilterData filterData)
+    {
+        if (filters.Equals(filterData.name))
+            filters = "";
+        else
+            filters = filterData.name;
+
+        NFTSFiltered = string.IsNullOrWhiteSpace(filters) ? new() : NFTS.Where(x => string.Equals(filters, x.ContractAddress, StringComparison.InvariantCultureIgnoreCase)).ToList();
+        StateHasChanged();
+        childFiltered?.Reset(true);
+    }
+
+
+    private async Task RemoveFilter()
+    {
+        NFTSFiltered = null;
+        filters = "";
+        childFiltered?.Reset(true);
+    }
+
+    private string filter;
+    private async Task Enter()
+    {
+        Console.WriteLine($"filter id=> {filter}");
+        FilterByName();
+    }
+
+    private void FilterByName()
+    {
+        if (filter.Length > 2)
+        {
+            NFTSFiltered = nftInfos.SelectMany(x => x.Value)
+            .Where(x => x.Name.Contains(filter, StringComparison.InvariantCultureIgnoreCase) || x.Attributes.Any(y => y.AttributeTypeOption.OptionValue.Contains(filter, StringComparison.InvariantCultureIgnoreCase)))
+            .Select(x => new Yokai(x.TokenId, x.Collection.Address)
+                {
+                    Data = new YokaiData
+                    {
+                        name = x.Name ?? "",
+                        attributes = x.Attributes.Select(y => new NftAttributes { trait_type = "", value = y.AttributeTypeOption.OptionValue }).ToArray()
+                    },
+                    Rank = x.Rarity?.Rank ?? int.MaxValue
+                }).ToList();
+            Loaded = new List<Yokai>();
+            childFiltered?.Reset(true);
+            StateHasChanged();
+        }
+        else
+        {
+            NFTSFiltered = null;
+            Loaded = new List<Yokai>();
+            childFiltered?.Reset(true);
+            StateHasChanged();
+        }
+    }
+
+}

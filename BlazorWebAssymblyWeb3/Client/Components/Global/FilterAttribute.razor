@@ -1,0 +1,36 @@
+﻿
+<div class="attribute row-sb @(classActive?"active-filter":"") @Stats " onclick="@ClickFilterAsync">
+                                <div class="row-- gap">   @Name</div>
+                                <div class="column" style="text-align: right;">
+                                     @Number
+                             <div class="attribute-stat" > @Stats.ToString("F1") %</div>
+                               
+                                </div>
+                            </div>
+
+@code {
+
+    [Parameter]
+    public bool classActive { get; set; } = false;
+    [Parameter]
+    public string Name { get; set; }
+    [Parameter]
+    public string? Value { get; set; }
+    [Parameter]
+    public string Category { get; set; }
+    [Parameter]
+    public int Number { get; set; }
+    [Parameter]
+    public double Stats { get; set; }
+    
+    [Parameter]
+    public EventCallback<FilterData> OnFilterClick { get; set; }
+
+    public record FilterData(string category, string name);
+
+    private async Task ClickFilterAsync()
+    {
+        classActive = !classActive;
+        await OnFilterClick.InvokeAsync(new FilterData(Category,Value ?? Name));
+    }
+}

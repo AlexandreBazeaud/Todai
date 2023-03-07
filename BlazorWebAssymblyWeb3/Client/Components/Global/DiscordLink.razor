@@ -1,0 +1,68 @@
+@page "/discordlink"
+@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Client.Services
+@using MetaMask.Blazor
+@using Newtonsoft.Json
+@using System.Text
+@using static BlazorWebAssymblyWeb3.Client.Pages.Profile
+@inject HttpClient _httpClient;
+@inject StateContainer _stateContainer;
+@inject MetaMaskService _metamaskService;
+@inject Helper _helper;
+
+@if(_stateContainer.CurrentConnectedAddress is null)
+{
+    <div> you need to be connected in order to link your discord acount</div>
+}
+else{
+    <div class="modal market-orders column--">
+        <img height="40" src="media/discord_todai.svg" alt="" style="margin: 16px;">
+        <h2> Link my Discord Account</h2>
+          <p style="margin-bottom: 16px;">This proceedure is totally safe ;)</p>
+       <a class="main-button" href="@Constant.DISCORDCONNECT">Signature </a>
+    
+    </div>
+    <div class="modal-bg"></div>
+}
+@code{
+
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Code { get; set; }
+
+    private bool isLoading;
+    private bool isLinked;
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        //Console.WriteLine(Code);
+        if (string.IsNullOrWhiteSpace(Code)) return;
+        var address = await _metamaskService.GetSelectedAddress();
+
+        isLoading = true;
+       
+        var guid = await _httpClient.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={address}");
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+        {
+            contents = guid
+        });
+        if (!transaction.IsSuccess) return;
+        
+        var content = new
+        {
+            pAddress = address,
+            pHash = transaction.Hash,
+            pCode = Code
+        };
+        var result = await _httpClient.PostAsJsonAsync("Profile/LinkDiscordToProfile", content);
+        isLinked = result.IsSuccessStatusCode;
+    }
+
+
+
+
+
+    
+}

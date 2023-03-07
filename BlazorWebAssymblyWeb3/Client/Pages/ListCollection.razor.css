@@ -1,0 +1,101 @@
+﻿
+.collection {
+  text-align: left;
+}
+.rank {
+  text-align: right;
+  font-size: 1.4rem;
+  padding-right: 26px;
+}
+
+.collection{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  color: #B443FF;
+}
+.collection-table{
+  width: 100%;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  backdrop-filter: blur(2px);
+}
+.wa {
+  padding-top: 60PX;
+  max-width: 1400px;
+  margin: auto;
+}
+
+.collection-row{
+  display: flex;
+  padding: 15px;
+  min-width: 1200px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.collection-row >div{
+  display: flex;
+  align-items: center;
+  justify-content: right;
+}
+
+.header-row{
+  position: sticky;
+  top: 60px;
+  display: flex;
+  padding: 15px;
+  min-width: 1200px;
+  backdrop-filter: blur(3px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 2;
+}
+
+.header-row >div{
+  display: flex;
+  align-items: center;
+  justify-content: right;
+}
+
+.collection-row:hover{
+  background: rgba(255, 255, 255, 0.062);
+}
+
+.lc-title {
+  margin-top: 10vh;
+  margin-bottom: 5vh;
+  padding-left: 20px;
+}
+
+.input-search {
+  background: #4b0829;
+  box-shadow: inset -3px 4px 4px rgba(0, 0, 0, 0.25);
+  border: none;
+  height: 30px;
+  width: 300px;
+  border-radius: 3px;
+  color: #e7e3e5;
+  padding-left: 10px;
+  font-family: "Titillium Web";
+  font-size: 0.9em;
+}
+
+
+@media (max-width: 1050px) {
+
+ .lc-title{
+   flex-direction: column;
+   gap: 20px;
+ }
+ 
+table{
+  font-size: 0.8rem;
+  min-width: 600px;
+}
+.collection-table{
+  padding-bottom: 20px;
+}
+.collection-table::-webkit-scrollbar{
+ height: 5px;
+}
+}

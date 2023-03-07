@@ -1,0 +1,881 @@
+@page "/asset/{AddressOfCollection}/{id:int}/{Menu:int?}"
+@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Server
+@using Newtonsoft.Json
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using MetaMask.Blazor
+@using MetaMask.Blazor.Enums
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@using BlazorWebAssymblyWeb3.Client.Components.Marketplace
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Shared
+
+@inject IJSRuntime _jsRuntime;
+@inject HttpClient _http
+@inject MetaMaskService _metaMaskService;
+@inject PaintswapService _paintswapService;
+@inject NavigationManager _navManager;
+@inject Helper _helper;
+@inject AlertMessageService _alertMessageService;
+@inject StateContainer _stateContainer;
+
+<PageTitle> @NFT?.Data?.name | Todai</PageTitle>
+
+<HeadContent>
+    @* <meta property="og:image" content="https://todai.world/images/@AddressOfCollection/@(Id).png"/> *@
+    <meta property="og:image:type" content="image/png"/>
+    <meta property="og:image:width" content="300"/>
+    <meta property="og:image:height" content="300"/>
+    <meta property="og:image:alt" content="NFT"/>
+    <meta property="og:description" content="Come see"/>
+</HeadContent>
+<div class="collection-asset">
+@* <div class="asset-bg" style="background-image: url('media/asset-texture.svg');"> *@
+
+</div>
+<img class="asset-theme" src="@(NFT != null && NFT.IsDownloaded ? NFT?.Data?.image : "/media/todai_loading.svg")" alt="NFT">
+
+<div class="asset-left">
+    <div class="asset-nft row--">
+        <img style="filter: drop-shadow(0 0 0.75rem #0e1315bb);" src="@(NFT != null && NFT.IsDownloaded ? NFT?.Data?.image : "/media/todai_loading.svg")" alt="NFT">
+    </div>
+   
+    <div class="asset-tools column">
+         <a  href="" target="_blank">
+       <div class="asset-tools-btn tools-top" >
+               <img height="22" src="media/website_small.svg" alt="">
+         
+       </div>
+          </a>
+     @* <a  href="" target="_blank">
+       <div class="asset-tools-btn">
+           <img height="22" src="media/share_2.svg" alt="">
+       </div>
+          </a> *@
+            @if (!string.IsNullOrWhiteSpace(AddressOfOwner) && AddressOfOwner == AddressOfConnectedUser)
+                    {
+       <div class="asset-tools-btn"  @onclick="Transfer">
+          <img height="22"  src="media/send.svg" alt="">
+       </div>
+                    }
+      
+
+        <a href="@NFT?.Data?.image" download target="_blank"  rel="noopener noreferrer">
+            <div class="asset-tools-btn" >
+           <img height="22" src="media/download.svg" alt="">
+       </div>
+       </a>
+        <a  href="https://ftmscan.com/token/@AddressOfCollection?a=@Id" target="_blank">
+       <div class="asset-tools-btn tools-bottom">
+              <img height="18" src="media/etherscan.svg" alt="">
+       </div>
+          </a>
+        @* <a href="" target="_blank">
+       <div class="asset-tools-btn tools-custom">
+           <img height="18" src="media/eye_icon.svg" alt="">
+       </div>
+          </a> *@
+    </div>
+
+</div>
+
+<div class="asset-right">
+@* <div class="cover"></div> *@
+
+    <div class="asset-header row-sb" style="margin-bottom:4px">
+        <div class="row gap--">
+            <a style="height: 80px; margin-bottom:15px" href="/profile/@AddressOfOwner">
+                <img height="80" src="@(assetStats.ProfilePictureNFt?.Data?.image ?? "media/default_pp.png")" alt="">
+            </a>
+
+            <div class="column">
+                <h1 class="row gap text-shadow" >
+                    @(NFT != null && NFT.IsDownloaded ? (NFT?.Data?.name?.Length > 30 ? NFT?.Data?.name?.Substring(0, 30) : NFT?.Data?.name) : "?")
+                    @if (isConnected)
+                    {
+                        <div class="tooltip-c">
+                            <img class="cursor" src="@(assetStats.IsFavoritedByUser ? "media/favorite_icon.svg" : "media/notfavorite_icon.svg")" @onclick="Favorite" alt=""/>
+                            <div class="tooltip-r" style="@(assetStats.IsFavoritedByUser ? "display:none;" : "")">
+                                Add to favorites
+                            </div>
+                            <div class="tooltip-r" style="@(assetStats.IsFavoritedByUser ? "" : "display:none;")">
+                                Remove from favorites
+                            </div>
+                        </div>
+                    }
+                </h1>
+                <span style="font-weight: 300;">
+                    owned by
+                    <a href="/profile/@AddressOfOwner" class="profile-link">
+                        @(string.IsNullOrWhiteSpace(assetStats.ProfileName) ? YokaiPatcher.ShortenAddress(AddressOfOwner) : assetStats.ProfileName)
+                    </a>
+                    @if (!string.IsNullOrWhiteSpace(AddressOfOwner) && AddressOfOwner == AddressOfConnectedUser)
+                    {
+                        <button class="transfer-btn dt" @onclick="Transfer">
+                            <div class="row--"><img height="12" style="margin-right:6px;" src="media/send_icon.svg" alt="">Transfer </div>
+                        </button>
+                        <div class="transfer-modal themed-box column-center gap" style="@(!transfering ? "display: none;" : "")">
+                            <div class="column gap">
+                                <div > Transfer <i > @NFT?.Data?.name </i> to :</div>
+                                <div class="row gap">
+                                    <input class="search-bar" type="text" placeholder="Enter wallet address" @bind="@AddressToTransferTo"/> 
+                                    <button class="main-button" @onclick="SendNft">Send</button>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="modal-bg" @onclick="Transfer" style="@(!transfering ? "display: none;" : "")"></div>
+                    }
+                </span>
+                <div class="asset-header-stats row gap" style="transform: scale(0.95);">
+                    <div class="tooltip-c">
+                        <p class="row--">
+                            <img src="media/eye_icon.svg" alt=""/>
+                            &nbsp;0
+                            <div class="tooltip">
+                                Views
+                            </div>
+                        </p>
+                    </div>
+                    @* <p class="row--"><img src="media/comment_icon.svg" alt="">&nbsp;0 </p> *@
+                    <div class="tooltip-c">
+                        <p class="row--">
+                            <img height="15" src="media/favorite_icon.svg" alt="">&nbsp;@assetStats.FavoriteCount
+                        </p>
+                        <div class="tooltip">
+                            Favorites
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="asset-market column gap">
+            @if(assetStats.AssetListing != null)
+            {
+                <div class="row gap" style="align-self: flex-end;">
+                  <img height="28" src="media/ftm_2.svg" alt=""> <span class="bold" style="font-size: 32px;">@assetStats.AssetListing.Price</span>
+                    <p class="asset-market-dollar" style="margin-bottom:-6px;"> $@(string.Format("{0:0.#}",assetStats.AssetListing.PriceInt * _stateContainer.FantomPrice)) </p>
+                </div> 
+                @if (isOwner)
+                {
+                    <div class="row gap"  style="align-self: flex-end;"> 
+                       <button class="main-button" style="height: 25px" @onclick="CancelOrder">Cancel Lising</button> 
+                    </div> 
+                }
+                else
+                {
+                    <div class="row gap" > 
+                       <button class="main-button" style="height: 30px" @onclick="Checkout">Buy now</button>
+                        @if (ownOffer is null)
+                        {
+                            <button class="button-edit" style="height: 32px; border:none;" @onclick="MakeOffer"> Make offer </button>
+                        }
+                        else
+                        {
+                            <button class="button-edit" style="height: 32px; border:none;" @onclick="CancelOffer"> Update offer </button>
+                        }
+                    </div>
+                }
+
+            }
+            else if(isOwner)
+            {
+                <div class="row gap"> 
+                    <button class="main-button" style="height: 25px" @onclick="ListNft">List Nft</button> 
+                </div>
+            }
+            else{
+                 <button class="button-edit" style="height: 32px; border:none;" @onclick="MakeOffer"> Make offer </button> 
+            }
+        </div>  
+        <div class="button-group">
+            <button>send</button> <button>swap</button> <button>share</button>
+        </div> 
+    </div>
+    <div class="gallery-menu row-sb">
+        <div class="row">
+            <button class="@(ActiveMenu == 1 ? "selected-menu" : "")"
+                    @onclick="() => ChangeMenu(1)">
+                General
+            </button>
+            <button
+                class="@(ActiveMenu == 2 ? "selected-menu" : "")" @onclick="() => ChangeMenu(2)">
+                Marketplace
+            </button>
+            @* @if (assetStats.IsVerified)
+            {
+                <button
+                    class="@(ActiveMenu == 3 ? "selected-menu" : "")" @onclick="() => ChangeMenu(3)">
+                    Swap
+                </button>
+            } *@
+            <button
+                class="@(ActiveMenu == 4 ? "selected-menu" : "")" @onclick="() => ChangeMenu(4)">
+                Details
+            </button>
+        </div>
+        <div>
+            @* <div class="tooltip-c cursor">
+               <img height="20px" src="media/share.svg" alt="">
+               <div class="tooltip">
+                   Share on Twitter
+               </div>
+            </div> *@
+
+        </div>
+
+    </div>
+
+@if (ActiveMenu == 1)
+{
+    <div class="asset-tab column gap-">
+        @*@if (!assetStats.IsVerified && !isFantom)
+        {
+            <ConnectButton Style="margin:auto; margin-top:20px;" Class="row--" ChainId="250"/>
+        }
+        else*@
+        @if(true)
+        {
+
+            <div>
+                <div class="row  wrap" style="margin-bottom: 40px;"> 
+                     <a class="rarity" href="/Collection/@AddressOfCollection" style="margin-right: 20px; padding-left:25px">
+            <div class="row gap" style="cursor: pointer;">
+                <div style="height: min-content; position:relative">
+                <img class="asset-collection" src="@(assetStats.CollectionPicture ?? "media/default_pp.png") " alt="">
+             
+                   @if (assetStats.IsWhitelisted)
+                    {
+                        <a class="tooltip-c security-badge cursor image-badge" href="https://torimoontori.gitbook.io/todai/nft-platform/collections" target="_blank" >
+                            <img height="22" src="media/whitelisted.svg" alt="">
+                            <div class="tooltip-r "> Sealed </div>
+                        </a>
+                    }
+                    else if (assetStats.IsVerified)
+                    {
+                        <a class="tooltip-c security-badge cursor image-badge" href="https://torimoontori.gitbook.io/todai/nft-platform/collections" target="_blank" >
+                            <img height="22" src="media/verified.svg" alt="">
+                            <div class="tooltip-r "> Verified </div>
+                        </a>
+                    }
+      
+
+                  </div>
+                <div class="row gap">
+                    <div class="column">
+                        <p style="font-size: 1.2rem; opacity:1; color:#9121DE;font-weight:400; position:relative;
+                          font-size: 16px;">
+                            @assetStats.CollectionName
+                        </p>
+                        @if (assetStats.TotalSupply != null)
+                        {
+                            <p style="font-size: 0.9rem; margin-left:2px;">@assetStats.TotalSupply items</p>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        </a>
+ 
+         <div class="rarity column-center ">
+        <div class="rarity-score text-shadow ease" style="@(assetStats.Score == 0 ? "display:none;" : "")">
+           #@assetStats.Rank
+        </div>
+        <span style="opacity:0.6; font-weight:300;  @(assetStats.Rank == 0 ? "opacity:0;" : "")"> Rarity Rank</span>
+    </div> 
+                    <div class="rarity column-center ">
+        <div class="rarity-score text-shadow ease" >
+           319
+        </div>
+        <span style="opacity:0.6; font-weight:300;"> Total Transfers</span>
+    </div>        
+                     <div class="rarity column-center ">
+        <div class="rarity-score text-shadow ease row gap-c" >
+          <img height="18" src="media/wftm.svg" alt=""> 8392
+        </div>
+        <span style="opacity:0.6; font-weight:300;  "> Price ATH</span>
+    </div>     
+                </div>
+  
+                <div class="faq row gap  cursor" @onclick="ToggleText"> <img height="24" src="media/list.svg" alt="">Attributes </div>
+                <div style="overflow:hidden;">
+                    <div class="attributes @(textHidden ? "t-hide" : "t-show") ">
+                        @if (NFT is { Data: { } } && NFT.Data.attributes != null && NFT.Data.attributes.Length > 0 || assetStats.IsVerified)
+                        {
+                            @if (assetStats.AssetAttributesScores.Count > 0)
+                            {
+                                @foreach (var attr in assetStats.AssetAttributesScores)
+                                {
+                                    <div class="category ">
+                                        <div class="name row-sb gap">
+                                         <div  style="opacity: 0.6;" >@attr.AttributeTypeName  </div> 
+                                                  @if (attr is {ShouldBeCounted: true })
+                                            {
+                                                
+                                                <div  class="attribute-type row--"  style="gap: 4px;">
+                                                    <div>@attr.ApparitionCount </div>
+                                                    <div class="pourcent">| @((attr.ApparitionCount / (double)totalSupply).ToString("P1"))</div>
+                                                </div>
+                                            }
+                                      </div>
+                                        <div class="asset-attribute row-sb themed-box">
+                                            
+                                            <div class="attribute-title" style="  font-size: 15px;
+  overflow:hidden; 
+  white-space:nowrap; 
+  text-overflow:ellipsis;
+  justify-content: unset;
+  width: 190px;"> 
+                                                            
+                                                @attr.AttributeOptionName 
+                                                  @* <div class="score "># @attr.Score</div>  *@
+                                            </div>
+                                     <div class="row gap-c dt" style="margin-right: -6px; padding:8px; font-size:14px">
+                                            <img  src="media/ftm_dark.svg" height="20" alt=""> 500
+                                        </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else if(NFT.Data?.attributes != null)
+                            {
+                                @foreach (var attr in NFT.Data?.attributes)
+                                {
+                                    var attributeStat = assetStats.AssetAttributesScores?.FirstOrDefault(x => x.AttributeTypeName == attr.trait_type);
+                                    <div class="category ">
+                                        <div class="name row gap">@attr.trait_type</div>
+                                        <div class="asset-attribute row-sb themed-box">
+                                            <div>@attr.value</div>
+                                            @if (attributeStat is {ShouldBeCounted: true })
+                                            {
+                                                <div class="row--">
+                                                    <div class="score bold">+ @attributeStat.Score</div>
+                                                    <div class="pourcent">@((attributeStat.ApparitionCount / (double)totalSupply).ToString("P1"))</div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+
+
+                        }
+                    </div>
+
+                </div>
+
+            </div>
+        }
+        @* <CollapsableBox Name="Related Assets" src="media/pictures.svg">
+         </CollapsableBox>  *@
+    </div>
+}
+else if (ActiveMenu == 2)
+{
+    <div class="asset-tab">
+        <div class="asset-market flex gap-">
+            <CollapsableBox Name="Offers" src="media/list.svg">
+                <div class="listings column-center gap">
+                    <div class="table-header row gap">
+                        <div class="lt-price">Price</div>
+                        <div>USD Price</div>
+                        <div>Floor</div>
+                        <div>Expiration</div>
+                        <div>From</div>
+                        <div style="width:90px">Market</div>
+                    </div>
+                    @if(assetStats.OffersListed.Count > 0){
+                        @foreach(var offer in assetStats.OffersListed.OrderByDescending(x => x.PriceInt))
+                        {
+                           <AssetOffer IsOwner="isOwner" NFT="NFT" Offer="offer"/>
+                        }
+                    }else{
+                        <style>.table-header{opacity: 0;}</style>
+                          <p style="margin-top:-20px ;">no offers yet</p>
+                    }
+                    
+                    @*<div class="row gap">
+                        <div class="lt-price row gap">
+                            <img height="26" src="media/ftm_dark.svg" alt="fantom"> <spance class="bold" style="font-size: 18px;">500</span>
+                            <p style="margin-bottom:-6px;font-size:13px;">FTM</p>
+                        </div>
+                        <div style="opacity: 0.7;"> $1,299.0 </div>
+                        <div style="opacity: 0.7;"> 30% below</div>
+                        <div style="opacity: 0.7;"> in 3 days</div>
+                        <div class="bold a-link" style="color: #9321E0;"> ToriFlower</div>
+                        <div class="row gap" style="justify-content: flex-end; width:90px">
+                            <a href="">
+                                 <img height="25" src="media/paintswap_icon.svg" alt="">
+                            </a>
+                        </div>
+                    </div>*@
+                </div>
+
+
+            </CollapsableBox>
+            <div class="listing-c column gap--">
+                @if (Sale != null)
+                {
+                    <div class="listing column">
+                        <div class="faq row-sb" style="background: rgba(255, 255, 255, 0.05); height:40px">
+                            <div class=" row gap"> <img height="16" src="media/paintswap_icon.svg" alt=""> PaintSwap</div>
+                            <p style="font-size:13px">@Helper.ToReadableExpirationDate(long.Parse(Sale.endTime)) </p>
+                        </div>
+                        <div class="column-center gap" style="height:120px; ">
+                            <div class="row gap">
+                                <img height="26" src="media/ftm.svg" alt=""> <span  class="ftm-gradient"  style="font-size: 28px;">@Sale.price.Substring(0, Sale.price.Length - 18)</span>
+                                <p style="font-size:14px;margin-bottom:-6px;">($@Math.Round(Sale.PriceInt*(_stateContainer.FantomPrice ?? 0))) </p>
+                            </div>
+                            <div class="row gap">
+                                <a class="main-button" style="height: 26px" href="https://paintswap.finance/marketplace/@Sale.id" target="_blank">Buy now</a> <button class="button-edit" style="height: 28px; border:none;"> Make offer </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else 
+                {
+                    <div class="listing column">
+                       <div class="faq row-sb" style="background: rgba(255, 255, 255, 0.05); height:40px">
+                           <div class=" row gap"> <img height="16" src="media/paintswap_icon.svg" alt=""> Paintswap</div>     <p>not listed</p>                    
+                       </div>
+                   </div>
+                }
+
+                @if (nftKeySale != null  && nftKeySale.PriceInt > 0 && assetStats.NftKeyAlias != null)
+                {
+                    <div class="listing column">
+                    <div class="faq row-sb" style="background: rgba(255, 255, 255, 0.05); height:40px">
+                        <div class=" row gap"> <img height="16" src="media/nftkey_logo.svg" alt=""/> NftKey</div>
+                        <p style="font-size:13px">@Helper.ToReadableExpirationDate(long.Parse(nftKeySale.expireTimestamp)) </p>
+                    </div>
+                    <div class="column-center gap" style="height:120px; ">
+                        <div class="row gap">
+                            <img height="26" src="media/ftm.svg" alt=""/> <span class="ftm-gradient" style="font-size: 28px;">@nftKeySale.PriceInt</span>
+                            <p style="font-size:14px;margin-bottom:-6px;">($@Math.Round(nftKeySale.PriceInt * (_stateContainer.FantomPrice ?? 0))) </p>
+                        </div>
+                        <div class="row gap">
+                            <a class="main-button" style="height: 26px" href="https://nftkey.app/collections/@assetStats.NftKeyAlias/token-details/?tokenId=@Id" target="_blank">Buy now</a> <button class="button-edit" style="height: 28px; border:none;"> Make offer </button>
+                        </div>
+                    </div>
+                </div>
+                }
+                else
+                {
+                    <div class="listing column">
+                    <div class="faq row-sb" style="background: rgba(255, 255, 255, 0.05); height:40px">
+                        <div class=" row gap"> <img height="16" src="media/nftkey_logo.svg" alt=""/> NftKey</div>  <p>not listed</p>                       
+                    </div>
+                    </div>
+                }
+                @* <div class="listing column"> *@
+                @*     <div class="faq row-sb" style="background: rgba(255, 255, 255, 0.05); height:40px"> *@
+                @*         <div class=" row gap"> <img height="16px" src="media/artion_icon.svg" alt=""> PaintSwap</div> *@
+                @*         <p style="font-size:13px">Ends in 6 days </p> *@
+                @*     </div> *@
+                @*     <div class="column-center gap" style="height:120px; "> *@
+                @*         <div class="row gap"> *@
+                @*             <img height="30px" src="media/ftm.svg" alt=""> <span class="bold" style="font-size: 32px;">500</span> *@
+                @*             <p style="margin-bottom:-6px;">($1,400) </p> *@
+                @*         </div> *@
+                @*         <div class="row gap"> *@
+                @*             <button class="main-button" style="height: 25px">Buy now</button> <button class="button-edit" style="height: 28px; border:none;"> Make offer </button> *@
+                @*         </div> *@
+                @*     </div> *@
+                @* *@
+                @* </div> *@
+            </div>
+
+            @*
+            <CollapsableBox Name="Item Activity" src="media/swap.svg">
+            </CollapsableBox>  *@
+        </div>
+
+    </div>
+}
+else if (ActiveMenu == 3)
+{
+    <div class="asset-tab">
+        @if (makeSwapOffer)
+        {
+            <MakeSwapOffer TradedNft="NFT" CollectionName="@assetStats.CollectionName" UserAddress="@AddressOfConnectedUser" OnOfferCreated="@OnOfferCreated"/>
+        }
+        <div class="column gap-">
+            @if (!AddressOfOwner.Equals(AddressOfConnectedUser, StringComparison.InvariantCultureIgnoreCase))
+            {
+                <div class="main-button"  @onclick="MakeSwapOffer">Make Swap Offer </div>
+            }
+            <CollapsableBox Name="Open Offers">
+                @if (SwapOffers != null)
+                {
+                    @foreach (var swapOffer in SwapOffers)
+                    {
+                        <SwapOfferCard SwapOffer="swapOffer" CurrentAddress="@AddressOfConnectedUser" IsTradable=@(AddressOfOwner == AddressOfConnectedUser)/>
+                    }
+                }
+                else
+                {
+                    <div class="row--" style="opacity: 0.7;"> no offers yet </div>
+                }
+            </CollapsableBox >
+        </div>
+    </div>
+}
+else if (ActiveMenu == 4)
+{    <style>.asset-tab  >div {
+             width: 440px;
+           } </style>
+    <div class="asset-tab flex gap" >
+        <CollapsableBox Name="Asset Infos" src="media/details.svg">
+            <div style="opacity: 0.7;">
+                <div > @NFT?.Data?.description </div>
+                @* <div class="row gap">Creator : <div class="a-link purple bold">Oxxxx</div> </div> *@
+                <div class="row gap">Owner : <a href="/profile/@AddressOfOwner" class="a-link purple bold"> @(string.IsNullOrWhiteSpace(assetStats.ProfileName) ? YokaiPatcher.ShortenAddress(AddressOfOwner) : assetStats.ProfileName)</a> </div>
+                @* <div class="row gap">Royalty : <div class=" purple bold"> 5%</div> </div> *@
+                <div class="row gap">Explorer : <a href="https://ftmscan.com/token/@AddressOfCollection?a=@Id" class="a-link purple bold"> ftmscan</a> </div>
+            </div>
+        </CollapsableBox>
+        <CollapsableBox Name="Technology" src="media/technology.svg">
+            <div class="wrap">
+                <div class="custom-select row"> <img src="media/id_icon.svg" alt=""> # @NFT.TokenId </div>
+                <div class="custom-select row">
+                    <img src="media/chain_icon.svg" alt=""> <span>Fantom</span>
+                </div>
+                @* <div class="custom-select row">
+                    <img src="media/format_icon.svg" alt=""> <span>SVG </span>
+                </div>
+                <div class="custom-select row"> <img src="media/storage.svg" alt=""> OnChain</div> *@
+            </div>
+        </CollapsableBox>
+    </div>
+}
+</div>
+@if (listing)
+{
+    <ListingAsset NFT="NFT" Close="CloseListing" />
+}
+@if (buying)
+{
+    <CheckoutOffer AssetListed="assetStats.AssetListing" NFT="NFT" OnClose="CheckoutClose"/>
+}
+@if (makeOffer)
+{
+    <MakeOffer NFT="NFT" Close="CloseMakeOffer" />
+}
+@if(cancelOffer)
+{
+    <CancelOffer NFT="NFT" Close="CloseCancelOffer" OwnOffer="ownOffer" />
+}
+@code {
+
+    private int ActiveMenu { get; set; } = 1;
+    private string state;
+    private TransactionStatue.ImageState imageState;
+
+    //private string ownerNickName;
+
+    [Parameter]
+    public int? Menu { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public string AddressOfCollection { get; set; }
+
+    private Yokai NFT { get; set; }
+
+    private string AddressOfConnectedUser { get; set; }
+    private string AddressOfOwner { get; set; }
+    private string? AddressToTransferTo;
+    private PaintswapService.PaintSwapSale? Sale { get; set; }
+    private NftKeySale? nftKeySale { get; set; }
+
+    private bool transfering;
+
+    private bool makeSwapOffer;
+    private bool cancelOffer;
+
+    private int totalSupply;
+    private AssetStats assetStats = new();
+
+    private OfferListed? ownOffer = null;
+    private bool textHidden;
+    private bool isInDatabase;
+    private bool isConnected;
+    private bool isOwner;
+
+    private bool isFantom;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AddressOfCollection.IsValidEthAddress())
+        {
+            _navManager.NavigateTo(_navManager.BaseUri);
+            return;
+        }
+
+        //var hasMetaMask = await _metaMaskService.HasMetaMask();
+        isConnected = await _metaMaskService.IsSiteConnected();
+        if (isConnected)
+        {
+            (long chainId, Chain chain) = await _metaMaskService.GetSelectedChain();
+            isFantom = chainId == 250;
+            AddressOfConnectedUser = (await _metaMaskService.RequestAccounts()).Substring(2, 42).ToLower();
+        }
+
+        try
+        {
+            totalSupply = await _jsRuntime.InvokeAsync<int>("RecoverLib.GetTotalSupply", AddressOfCollection);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+        try
+        {
+            AddressOfOwner = (await _jsRuntime.InvokeAsync<string>("RecoverLib.OwnerOf", AddressOfCollection, Id)).ToLower();
+            isOwner = AddressOfOwner == AddressOfConnectedUser;;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+        NFT = new Yokai(Id, AddressOfCollection);
+        if (AddressOfCollection.Equals(Constant.YOKAIADDRESS, StringComparison.InvariantCultureIgnoreCase))
+            YokaiPatcher.Patch(NFT);
+
+        var result = await _http.GetAsync($"Yokai/GetAssetStatsFor?pCollection={AddressOfCollection}&pTokenId={Id}&pOwner={AddressOfOwner}&pConnectedAddress={AddressOfConnectedUser}");
+
+        if (result.IsSuccessStatusCode)
+        {
+            assetStats = await result.Content.ReadFromJsonAsync<AssetStats>();
+            ownOffer = assetStats?.OffersListed?.FirstOrDefault(x => x.Offerer.Equals(AddressOfConnectedUser, StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        //Console.WriteLine(assetStats.OffersListed.FirstOrDefault()?.OrderJson);
+        if (assetStats?.ProfilePictureCollection != null)
+        {
+            assetStats.ProfilePictureNFt = new Yokai(assetStats.ProfilePictureTokenId.Value, assetStats.ProfilePictureCollection)
+            {
+                Data = new YokaiData
+                {
+                    image = $"https://todai.world/images/{assetStats.ProfilePictureCollection}/{assetStats.ProfilePictureTokenId.Value}"
+                }
+            };
+        }
+
+        isInDatabase = !string.IsNullOrWhiteSpace(assetStats.Name);
+        if (assetStats.IsVerified != null || isInDatabase)
+        {
+            NFT.Data = new YokaiData
+            {
+                image = $"https://todai.world/images/{AddressOfCollection}/{NFT.TokenId}",
+                name = assetStats.Name
+            };
+
+            totalSupply = assetStats.ActualSupply;
+        }
+        else
+        {
+            var tokenUris = await _jsRuntime.InvokeAsync<string[]>("RecoverLib.GetTokenUri", Constant.HandledChains[assetStats.ChainId.GetValueOrDefault()].BatcherAddress,AddressOfCollection, new[] { Id });
+            NFT.BlockChainTokenUri = tokenUris.First();
+            NFT.Data = JsonConvert.DeserializeObject<YokaiData>(await _jsRuntime.InvokeAsync<string>("RecoverLib.GetTokenUriOf", NFT.BlockChainTokenUri));
+        }
+
+        if (NFT.Data?.attributes != null)
+        {
+            var attributes = new Dictionary<string, string>();
+            foreach (var keyValuePair in NFT.Data.attributes.Select(x => new KeyValuePair<string, string>(x.trait_type, x.value)))
+            {
+                attributes.Add(keyValuePair.Key, keyValuePair.Value);
+            }
+        }
+        if (Menu != null)
+        {
+            if (Menu.Value == 3 && !assetStats.IsVerified)
+            {
+                ActiveMenu = 1;
+                return;
+            }
+            await ChangeMenu(Menu.Value);
+        }
+    }
+
+    private List<SwapOffer>? SwapOffers;
+
+    private bool load;
+
+    private async Task ChangeMenu(int pId)
+    {
+        if (ActiveMenu == pId)
+            return;
+        if (load)
+            return;
+        load = true;
+
+        if (pId == 2)
+        {
+            Sale = await _paintswapService.GetSaleForNftIfExist(AddressOfCollection, NFT);
+            nftKeySale = JsonConvert.DeserializeObject<NftKeySale>(await _jsRuntime.InvokeAsync<string>("RecoverLib.GetTokenNFTKeyListing", AddressOfCollection, Id));
+            Console.WriteLine(nftKeySale);
+        }
+        else if (pId == 3)
+        {
+            var swapOffersResult = await _http.GetAsync($"Yokai/GetSwapOffersForAsset?pCollectionAddress={AddressOfCollection}&pTokenId={Id}");
+            if (swapOffersResult.IsSuccessStatusCode)
+            {
+                var newSwapOffers = (await swapOffersResult.Content.ReadFromJsonAsync<List<SwapOffer>>()) ?? new List<SwapOffer>();
+                // if (SwapOffers != null)
+                //     SwapOffers.AddRange(newSwapOffers.Where(x => SwapOffers.Select(x => x.Id).Contains(x.Id)));
+                // else
+                SwapOffers = newSwapOffers;
+
+                foreach (var swapOffer in SwapOffers)
+                {
+                    swapOffer.OfferedNft = new(swapOffer.OfferTokenId, swapOffer.OfferCollection);
+                    swapOffer.TargetedNft = NFT;
+                    swapOffer.TargetOwnerNickname = assetStats.ProfileName ?? "";
+                    swapOffer.TargetOwnerAddress = AddressOfOwner;
+                    if (AddressOfCollection.Equals(Constant.YOKAIADDRESS, StringComparison.InvariantCultureIgnoreCase))
+                        YokaiPatcher.Patch(NFT);
+                }
+            }
+        }
+        ActiveMenu = pId;
+        load = false;
+        await InvokeAsync(StateHasChanged);
+        //_navManager.NavigateTo($"/asset/{AddressOfCollection}/{Id}/{pId}", false);
+    }
+
+    private bool makeOffer = false;
+    private void MakeOffer()
+    {
+        if(string.IsNullOrWhiteSpace(_stateContainer.CurrentConnectedAddress))
+        {
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Info, "You need to be connected");
+            return;
+        }
+        makeOffer = true;
+    }
+
+    private void CloseMakeOffer(OfferListed newOffer)
+    {
+        if (runningTransaction)
+            return;
+        makeOffer = false;
+        ownOffer = newOffer;
+    }
+
+    private void CloseCancelOffer(bool Cancelled)
+    {
+        if (runningTransaction)
+            return;
+        cancelOffer = false;
+
+        if (Cancelled)
+            ownOffer = null;
+    }
+
+    private void CancelOffer() => cancelOffer = true;
+
+    private async Task SendNft()
+    {
+        if (string.IsNullOrWhiteSpace(AddressToTransferTo)) return;
+        try
+        {
+            var confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to send this nft to {AddressToTransferTo} ?");
+            if (!confirmed) return;
+            await _jsRuntime.InvokeVoidAsync("RecoverLib.TransferFrom", new[]
+            {
+                AddressOfCollection,
+                AddressToTransferTo,
+                Id.ToString()
+        });
+        }
+        catch
+        {
+
+        }
+    }
+
+    private void Transfer() => transfering = !transfering;
+
+    private void CloseSwapOffer() => makeSwapOffer = false;
+
+    private void MakeSwapOffer() => makeSwapOffer = true;
+
+    public record struct Message(string contents);
+    private async Task Favorite()
+    {
+        (long chainId, Chain chain) = await _metaMaskService.GetSelectedChain();
+        if (chainId != 250)
+        {
+            return;
+        }
+
+        var address = await _metaMaskService.GetSelectedAddress();
+        var guid = await _http.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={address}");
+
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+        {
+            contents = guid
+        });
+        var profile = await _http.GetStringAsync($"Yokai/FavoriteAsset?pCollectionId={assetStats.CollectionId}&pTokenId={Id}&pSignatureHash={transaction.Hash}&pAddress={address}");
+        assetStats.IsFavoritedByUser = !assetStats.IsFavoritedByUser;
+        StateHasChanged();
+    }
+
+    private async Task DownloadNFT()
+    {
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.DownloadFile", NFT.Data.name, NFT.Data.image);
+    }
+
+    private async Task OnOfferCreated(bool pIsSuccess)
+    {
+        makeSwapOffer = false;
+        await ChangeMenu(3);
+    }
+
+    private bool listing = false;
+    private void ListNft() => listing = true;
+    private void CloseListing() => listing = false;
+
+    private void ToggleText()
+    {
+        textHidden = !textHidden;
+        StateHasChanged();
+    }
+
+    private bool buying;
+    private bool runningTransaction;
+    public void Checkout() => buying = true;
+
+
+    public Task CheckoutClose()
+    {
+        buying = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public async Task CancelOrder()
+    {
+        var reference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.cancelOrder", assetStats.AssetListing.OrderJson, reference);
+    }
+
+    [JSInvokable]
+    public async Task WaitingTransaction() => runningTransaction = true;
+
+    [JSInvokable]
+    public async Task TransactionDone(bool isSuccess, string pError = "")
+    {
+        runningTransaction = false;
+        if (isSuccess)
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Listing has been canceled");
+        else
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+    }
+}

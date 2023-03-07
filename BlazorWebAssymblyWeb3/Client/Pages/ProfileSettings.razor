@@ -1,0 +1,202 @@
+@using BlazorWebAssymblyWeb3.Client.Components.Marketplace
+@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3;
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using BlazorWebAssymblyWeb3.Client.Components.Global;
+@using MetaMask.Blazor
+@using static BlazorWebAssymblyWeb3.Client.Components.Marketplace.Wallet
+
+@inject HttpClient _httpClient;
+@inject StateContainer _stateContainer;
+@inject Helper _helper;
+@inject MetaMaskService _metamaskService;
+@inject NavigationManager _navManager;
+@inject SessionStorageService _storageService;
+@inject AlertMessageService _alertMessageService;
+
+@if (string.IsNullOrWhiteSpace(_stateContainer.CurrentConnectedAddress) || profile is null)
+{
+    <div>load...</div>
+}
+else
+{
+    <div class="flex" style="gap: 150px;">
+        <div class="column gap-">
+            <h1>Profile Settings</h1>
+            <div class="column gap--">
+                <EditForm EditContext="editContext">
+                    <div class="column" style="gap: 4px;">
+                        <p>Name</p>
+                        <InputText @bind-Value="profileEdit.Username" class="search-bar" />
+                    </div>
+                    <div class="column" style="gap: 4px;">
+                        <p>Bio</p>
+                        <InputTextArea @bind-Value="profileEdit.Bio" class="search-bar" style="height: 150px; resize:vertical;" rows="4" cols="50" />
+                        @*<textarea rows="4" cols="50"  class="search-bar"></textarea>*@
+                    </div>
+                    <div class="column" style="gap: 4px;">
+                        <p>Location</p>
+                        <InputText @bind-Value="profileEdit.Localisation" class="search-bar" />
+                    </div>
+                    <div class="column" style="gap: 4px;">
+                        <p>Activity</p>
+                        <InputText @bind-Value="profileEdit.Activity" class="search-bar" />
+                    </div>
+                    <h1>Social</h1>
+
+                    <div class="column" style="gap: 4px;">
+                        <p>Twitter</p>
+                        <InputText @bind-Value="profileEdit.TwitterHandle" class="search-bar" />
+                    </div>
+                    <div class="column" style="gap: 4px;">
+                        <p>Instagram</p>
+                        <InputText @bind-Value="profileEdit.InstagramNickname" class="search-bar" />
+                    </div>
+
+                    <div class="column" style="gap: 4px;">
+                        <p>Website</p>
+                        <InputText @bind-Value="profileEdit.Link" class="search-bar" />
+                    </div>
+                    @*
+                    @if (profile.DiscordId != null)
+                    {
+                        <div class="row gap-" style="gap: 16px;">
+                            <div>MOONTORI#1405(@profile.DiscordId)</div>
+                            <button class="button-edit" style="width: 150px; border:1px solid white;opacity:0.5;"> Linked Discord</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row gap-" style="gap: 16px;">
+                            <button class="button-edit" style="width: 150px; border:1px solid white;opacity:0.5;" onclick="@DiscordLink" disabled="@editing"> Link Discord</button>
+                            @if (DiscordLinking)
+                            {
+                                <DiscordLink />
+                            }
+                        </div>
+                    }
+                    *@
+                </EditForm>
+            </div>
+        </div>
+        <div class="column gap-">
+            <div class="column">
+                <p>Profile NFT</p>
+                <div class="profile-pic">
+                    <span class="edit-hover row--" @onclick="() => ChoosingPFP = true">
+                        <img class="edit-icon" style="height:25px;" src="media/edit_icon.svg" alt="">
+                    </span>
+
+                    <img src="@(profile.Nft is null ? "media/profile_default.png":$"https://todai.world/images/{profile.Nft.Collection.Address}/{profile.TokenId!.Value}")" alt="">
+                </div>
+            </div>
+            <div class="column">
+                <p>Background NFT</p>
+                <div class="bg-pic">
+                    <span class="edit-hover row--">
+                        <p> Coming Soon </p>
+                    </span>
+                    <img src="media/profile_default_bg.png" alt="">
+                </div>
+            </div>
+            
+            <button type="button" onclick="@SubmitProfileEditAsync" class="btn-x watch-btn @(editing?"":"disabled-btn")" style="height: 38px; font-size:1rem;">Save all changes</button>
+        </div>
+    </div>
+    @if (ChoosingPFP) 
+    {
+        <Wallet UserAddress="@_stateContainer.CurrentConnectedAddress" IsCurrentConnectedProfile="true" OnNftChoice="WalletNftChosen" />
+        @* <div class="modal-bg" style="@(!ChoosingPFP ? "display: none;" : "")" @onclick="() => ChoosingPFP = false"></div> *@
+    }
+}
+@code {
+    private BlazorWebAssymblyWeb3.Server.Profile profile;
+    private ProfileEdit profileEdit = new();
+    private EditContext editContext;
+
+    public record struct Message(string contents);
+    protected override async Task OnInitializedAsync()
+    {
+        var isConnected = await _metamaskService.IsSiteConnected();
+        if (!isConnected)
+            _navManager.NavigateTo("/Home");
+
+        editContext = new EditContext(profileEdit);
+        editContext.OnFieldChanged += FormChanged;
+        var address = await _metamaskService.GetSelectedAddress();
+
+        await GetProfileAsync(address);
+    }
+
+    private async Task GetProfileAsync(string address)
+    {
+        profile = await _httpClient.GetFromJsonAsync<BlazorWebAssymblyWeb3.Server.Profile>($"Profile/GetProfileOf?pAddress={address}");
+        profileEdit = new ProfileEdit
+        {
+            Localisation = profile.Localisation,
+            Activity = profile.Activity,
+            Bio = profile.Bio,
+            Link = profile.Link,
+            InstagramNickname = profile.InstagramNickname,
+            TwitterHandle = profile.TwitterHandle,
+            Gender = profile.Gender ?? "",
+            Username = profile.Name
+        };
+    }
+
+    private bool ChoosingPFP;
+    private async Task WalletNftChosen(WalletChoseData Data)
+    {
+        var guid = await _httpClient.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={_stateContainer.CurrentConnectedAddress}");
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+        if (!transaction.IsSuccess) return;
+
+        var result = await _httpClient.GetAsync($"Profile/SetNFTProfilePicture?pAddress={_stateContainer.CurrentConnectedAddress}&pHash={transaction.Hash}&pCollectionAddress={Data.Collection.Address}&pTokenId={Data.Nft.TokenId}");
+        if (result.IsSuccessStatusCode)
+        {
+            await _storageService.RemoveItemAsync("connectedProfileNft");
+            _navManager.NavigateTo(_navManager.Uri, true);
+        }
+        ChoosingPFP = false;
+    }
+
+    private async Task SubmitProfileEditAsync()
+    {
+        var guid = await _httpClient.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={_stateContainer.CurrentConnectedAddress}");
+
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+        if (!transaction.IsSuccess) return;
+        var postBody = new { pAddress = _stateContainer.CurrentConnectedAddress, pHash = transaction.Hash, pEditInfo = profileEdit };
+        var isEdited = await _httpClient.PostAsJsonAsync("Profile/EditProfile", postBody);
+        if (isEdited.IsSuccessStatusCode)
+        {
+            var profileResult = await _httpClient.GetAsync($"Profile/GetProfileOf?pAddress={_stateContainer.CurrentConnectedAddress}");
+            if (profileResult.IsSuccessStatusCode){
+                profile = await profileResult.Content.ReadFromJsonAsync<BlazorWebAssymblyWeb3.Server.Profile>();
+                _alertMessageService.ShowAlertMessage(AlertMessageService.States.Success, "Profile edited");
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private bool editing;
+    private bool discordLinking;
+    private void FormChanged(object sender, FieldChangedEventArgs pArg)
+    {
+        editing = true;
+        StateHasChanged();
+    }
+
+    private void DiscordLink()
+    {
+        discordLinking = true;
+    }
+}

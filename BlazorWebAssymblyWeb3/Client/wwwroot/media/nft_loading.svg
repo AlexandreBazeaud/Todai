@@ -1,0 +1,7 @@
+<svg width="285" height="285" viewBox="0 0 285 285" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="285" height="285" fill="#12001F" fill-opacity="0.4">
+     <animate attributeName="opacity"
+             values="0;1;0" dur="2.2s"
+             repeatCount="indefinite"/>
+ </rect>
+</svg>

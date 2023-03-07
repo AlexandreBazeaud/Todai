@@ -1,0 +1,204 @@
+﻿@page "/explorer/{searchQuery}"
+@page "/explorer"
+@using BlazorWebAssymblyWeb3.Client.Components;
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using BlazorWebAssymblyWeb3.Shared;
+@inject HttpClient _http
+@inject NavigationManager _navManager;
+@inject IJSRuntime _jsRuntime;
+
+<PageTitle> Explorer | Todai</PageTitle>
+<img src="media/clouds_top.webp" style="position: absolute; top:0; width:100%; height:fit-content; opacity:0.2" alt="">
+<div class="explorer">
+    <div class="search-engine column">
+        @* <div class="help row--"> <img style="height: 20px; margin-right:5px;" src="media/help.svg" alt="help"> How does it works</div> *@
+        <div class="column-center" style=" margin-top:20vh;gap:3vh;">
+            <div class="navbar-logo text-shadow">
+                <div><span>Todai</span><span class="i-logo bold"> </span> Explorer </div>
+                <span class="copy" style="font-size: 2vh;">
+                    Search Engine
+                    <img style="height: 14px; margin-bottom:-3px;" src="media/r.svg" alt="r">
+                </span>
+            </div>
+            <input class="search-bar" type="text" placeholder="Start a research" @bind="searchText" @onkeyup="Enter"/>
+            <div class="search-buttons row">
+                <button href="#search-result" class="main-button navconnect shadow" @onclick="SearchNft">Search</button>
+                <button class="button-edit navconnect shadow" @onclick="Randomized">Randomized</button>
+            </div>
+             @* <FilterSelect/>
+             <FilterBtn/> *@
+            <div class="dt" style="font-size: 0.98rem; opacity:0.7; cursor: default;">Work in Progress</div>
+        </div>
+    </div>
+    <div id="search-result" class="column-center" style="position: relative; padding-top: 100px;">
+        <div class="result-menu row">
+            <button class="btn-x @(ChosenMenu == 1 ? "selected-":"") row gap" onclick="@(() => ChangeMenu(1))">
+                Collections
+                <div class="dt">@collectionsCount</div>
+            </button>
+            @* <button class="btn-x">Artists</button> *@
+            <button class="btn-x @(ChosenMenu == 3 ? "selected-":"") row" onclick="@(() => ChangeMenu(3))">
+                Members
+                <div class="dt">@profilesCount</div>
+            </button>
+        </div>
+        @* <div class="results-data row--">
+        <img src="media/yokai_like.svg" alt=""> <span> @collectionCount projects found</span>
+        <img src="media/yokai_like.svg" alt="">
+    </div>
+         <div class="search-filters row">
+
+        <div class="custom-select row-sb">
+            <div class="row--"> <img src="media/chain_icon.svg" alt=""> <span style="margin-left:8px;"> All
+                    Blockchains</span> </div> <img src="media/arrow_down.svg" alt="">
+        </div>
+        <div class="custom-select row-sb">
+            <div class="row--"> <img src="media/format_icon.svg" alt=""> <span style="margin-left:8px;"> All
+                    Formats</span> </div> <img src="media/arrow_down.svg" alt="">
+        </div>
+        <div class="custom-select row-sb">
+            <div class="row--"> <img src="media/chain_icon.svg" alt=""> <span style="margin-left:8px;"> All
+                    Categories</span> </div> <img src="media/arrow_down.svg" alt="">
+        </div>
+        <div class="custom-select row-sb">
+            <div class="row--"> <img src="media/chain_icon.svg" alt=""> <span style="margin-left:8px;"> All
+                    Blockchains</span> </div> <img src="media/arrow_down.svg" alt="">
+        </div>
+
+    </div> *@
+        @* <img class="bg-section" src="media/section_s.svg" alt=""> *@
+        @if (ChosenMenu == 1)
+        {
+            <div class="search-result">
+                @if (collectionsCount != null && collectionsCount > 0)
+                {
+                    <InfiniteScrolling @ref="childCollections" ItemsProvider="@LoadExplorer">
+                        <ItemTemplate Context="collection">
+                            <ExplorerItem Item="(ExplorerItemValue)collection"/>
+                        </ItemTemplate>
+                        <LoadingTemplate>
+                            <div class="card"></div> <div class="card"></div> <div class="card"></div> <div class="card"></div> <div class="card"></div> 
+                             <div class="card"></div> <div class="card"></div> <div class="card"></div> <div class="card"></div> <div class="card"></div>
+                        </LoadingTemplate>
+                    </InfiniteScrolling>
+                }
+            </div>
+        }
+        else if (ChosenMenu == 2)
+        {
+            <div>R</div>
+        }
+        else if (ChosenMenu == 3)
+        {
+            <div class="search-result">
+                @if (profilesCount != null && profilesCount > 0)
+                {
+                    <InfiniteScrolling @ref="childProfiles" ItemsProvider="@LoadUsers">
+                        <ItemTemplate Context="profile">
+                            <ExplorerItem Item="(ExplorerItemValue)profile"/>
+                        </ItemTemplate>
+                        <LoadingTemplate>
+                         <div class="card"></div> <div class="card"></div> <div class="card"></div> <div class="card"></div> <div class="card"></div>   
+                         <div class="card"></div> <div class="card"></div> <div class="card"></div> <div class="card"></div> <div class="card"></div>
+                        </LoadingTemplate>
+                    </InfiniteScrolling>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+  @* <Scrolltotop/> *@
+
+@code {
+    private int? collectionsCount;
+    private int? profilesCount;
+    private string searchText;
+    private bool isSearching;
+    private int ChosenMenu { get; set; } = 1;
+    private InfiniteScrolling<BlazorWebAssymblyWeb3.Server.Collection> childCollections;
+    private InfiniteScrolling<BlazorWebAssymblyWeb3.Server.Profile> childProfiles;
+
+    [Parameter]
+    public string searchQuery { get; set; }
+
+    private async ValueTask<ItemsProviderResult<BlazorWebAssymblyWeb3.Server.Collection>> LoadExplorer(ItemsProviderRequest request)
+    {
+        if (isSearching)
+        {
+            var numCollections = Math.Min(request.Count, collectionsCount.Value - request.StartIndex);
+
+            var newCollections = await _http.GetFromJsonAsync<Explorer.ExplorerPayload>($"Collection/GetCollections?pFilter={searchText}&pSkip={request.StartIndex}&pFetch={numCollections}");
+            return new ItemsProviderResult<BlazorWebAssymblyWeb3.Server.Collection>(newCollections.Collections, collectionsCount.Value);
+        }
+        else
+        {
+            var numCollections = Math.Min(request.Count, collectionsCount.Value - request.StartIndex);
+
+            var newCollections = await _http.GetFromJsonAsync<Explorer.ExplorerPayload>($"Collection/GetCollections?pSkip={request.StartIndex}&pFetch={numCollections}");
+            return new ItemsProviderResult<BlazorWebAssymblyWeb3.Server.Collection>(newCollections.Collections, collectionsCount.Value);
+        }
+    }
+
+    private async ValueTask<ItemsProviderResult<BlazorWebAssymblyWeb3.Server.Profile>> LoadUsers(ItemsProviderRequest request)
+    {
+        if (isSearching)
+        {
+            var numProfiles = Math.Min(request.Count, profilesCount.Value - request.StartIndex);
+
+            var filteredProfiles = await _http.GetFromJsonAsync<Explorer.ExplorerUsersPayload>($"Profile/GetProfiles?pFilter={searchText}&pSkip={request.StartIndex}&pFetch={numProfiles}");
+            return new ItemsProviderResult<BlazorWebAssymblyWeb3.Server.Profile>(filteredProfiles.Profiles, profilesCount.Value);
+        }
+        else
+        {
+            var numProfiles = Math.Min(request.Count, profilesCount.Value - request.StartIndex);
+
+            var profiles = await _http.GetFromJsonAsync<Explorer.ExplorerUsersPayload>($"Profile/GetProfiles?pSkip={request.StartIndex}&pFetch={numProfiles}");
+            Console.WriteLine(profiles.Profiles.Count);
+            return new ItemsProviderResult<BlazorWebAssymblyWeb3.Server.Profile>(profiles.Profiles, profilesCount.Value);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        collectionsCount = int.Parse(await _http.GetStringAsync("Collection/GetCollectionsCount"));
+        profilesCount = int.Parse(await _http.GetStringAsync("Profile/GetProfilesCount"));
+
+        if(!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            searchText = searchQuery;
+            await SearchNft();
+        }
+
+    }
+    
+    private async Task SearchNft()
+    {
+        isSearching = !string.IsNullOrWhiteSpace(searchText);
+        collectionsCount = int.Parse(await _http.GetStringAsync($"Collection/GetCollectionsCount?pFilter={searchText}"));
+        profilesCount = int.Parse(await _http.GetStringAsync($"Profile/GetProfilesCount?pFilter={searchText}"));
+        childCollections?.Reset(true);
+        childProfiles?.Reset(true);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.BlazorScrollToId", "search-result");
+        StateHasChanged();
+    }
+
+    private async Task Randomized()
+    {
+        var address = await _http.GetStringAsync("Collection/GetRandomCollection");
+        _navManager.NavigateTo($"{_navManager.BaseUri}collection/{address}");
+    }
+
+    private async Task Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+            await SearchNft();
+    }
+
+    private void ChangeMenu(int pId)
+    {
+        ChosenMenu = pId;
+        StateHasChanged();
+    }
+}

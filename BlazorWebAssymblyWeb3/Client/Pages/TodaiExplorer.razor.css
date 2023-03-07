@@ -1,0 +1,209 @@
+﻿
+.explorer{
+  max-width: 1800px;
+  margin: auto;
+  padding-bottom: 600px;
+}
+.search-engine {
+  position: relative;
+  gap: 3vh;
+}
+
+.dt{
+  font-size: 0.8rem !important;
+  padding: 1px 10px 1px 10px;
+}
+
+.search-bar {
+  color: whitesmoke;
+  height: 40px;
+  width: 50vw;
+  max-width: 900px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: none;
+  padding-left: 10px;
+  transition: 0.6s;
+  font-family: "Titillium Web";
+}
+.main-button {
+  width: 160px;
+
+}
+.button-edit {
+  width: 160px;
+
+}
+.search-buttons {
+  gap: 0.88vw;
+}
+
+.result-menu{
+  padding-left: 60px;
+  width: 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.result-menu button{
+  font-size: 1rem;
+  margin-right: 20px;
+  padding: 10px;
+  opacity: 0.7;
+}
+
+.selected-{
+  opacity: 1 !important; 
+  margin-bottom: -3px;
+  border-bottom: 3px solid white ;
+}
+
+.custom-select {
+  background: rgba(0, 0, 0, 0.03);
+  box-shadow: 0px 0px 14.3862px 1.79827px rgba(148, 148, 148, 0.37);
+  font-size: 0.92rem;
+  height: 45px;
+  position: relative;
+  font-family: 'Roboto';
+  font-weight: 400  ;
+  border-radius: 5px;
+  gap: 16px;
+  padding: 14px;
+ cursor: pointer;
+}
+
+.search-filters {
+  padding-top: 3vh;
+  gap: 2vw;
+}
+
+.results-data{
+  gap: 10px;
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin-top: -10px;
+}
+
+.results-data >img{
+  height: 30px;
+}
+
+.search-result {
+  display: grid;
+  grid-template-columns: repeat(5,1fr);
+  gap: 5vh;
+  margin-bottom: 10vh;
+  padding-top: 30px;
+}
+@media (max-width: 1800px) {
+  .search-result { grid-template-columns: repeat(4, 1fr); margin-top: 10px;  }
+}
+@media (min-width: 1800px) {
+  .search-result { padding-top: 50px; }
+}
+@media (max-width: 1300px) {
+  .search-result { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 1100px) {
+  .search-result { grid-template-columns: repeat(2, 1fr); }
+}
+
+
+
+
+.network {
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.048);
+  padding: 5px;
+  height: 28px;
+  width: 28px;
+}
+.network > img {
+  width: 20px;
+  height: 20px;
+}
+
+.bg-section{
+  position: absolute;
+  width: 100%;
+  top: 5%;
+}
+.i-logo {
+  color: #e7197d;
+}
+
+.navbar-logo{
+  position: relative;
+  font-size: 10vh;
+  height: 14vh;
+}
+
+.copy{
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  margin-right: -12px;
+  margin-bottom: -3px;
+  transform: scale(0.7);
+}
+.help{
+  position: absolute;
+  color:rgba(245, 245, 245, 0.473);
+  font-size: 0.9rem;
+  bottom: 3%;
+  right: 2%;
+  text-decoration: underline;
+}
+
+.yokai-likes{
+ position: absolute;
+ text-shadow: 0 0 10px rgba(255, 255, 255, 0.842);
+ gap: 5px;
+ bottom: 3%;
+ right: 3%;
+}
+
+.project-date{
+  position: absolute;
+  gap: 5px;
+  bottom: 2%;
+  left: 3%;
+  opacity: 0.9;
+  padding: 5px;
+  font-size: 0.92rem;
+}
+.bg-section {
+  top:0;
+}
+
+/* Mobile Version */
+
+@media (max-width: 650px) {
+
+.navbar-logo{
+  font-size:45px;
+  height: unset;
+}
+.search-bar{
+  width: 90vw;
+  border-radius: 4px;
+}
+
+.search-buttons{
+  gap: 8px;
+}
+.search-result{
+  grid-template-columns: repeat(1, 1fr);
+  transform: scale(1);
+}
+.copy{
+ bottom: -2px;
+}
+
+.search-filters{
+  display: none;
+}
+.results-data{
+  margin-top: 15px;
+}
+
+}

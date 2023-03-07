@@ -1,0 +1,180 @@
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Server;
+@using BlazorWebAssymblyWeb3.Client.Data;
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using System.Numerics
+@inject IJSRuntime _jsRuntime;
+@inject StateContainer _stateContainer;
+@inject HttpClient _httpClient;
+@inject AlertMessageService _alertMessageService;
+
+<div class="modal market-orders column gap--" style="@(success ? "display: none;" : "")">
+  <h2>Checkout</h2>
+   <div class="token-balance row-sb" style="width: 100%;">
+        <div class="row gap">
+            <img height="35" src="media/ftm.svg" alt="">
+             <div class="column" style="margin-top: -5px;">
+                 <div class="row" style="gap:2px">@YokaiPatcher.ShortenAddress(_stateContainer.CurrentConnectedAddress) <div class="connected-tag row--">Connected</div> </div>
+                 <p>Balance</p>
+             </div>
+        </div>
+        <div class="column">
+           <div class="row gap-c"> <img src="media/ftm.svg" height="14" alt="">  @balance</div> 
+            <p style="text-align: right;"> $ @priceBalance</p>
+        </div>
+    </div>
+    <div class="column" style="font-size: 0.96rem; padding:0px 4px">    
+         <div class="row-sb" style="margin-top: 3px;">
+           <p style="align-self: flex-start;">Platform fees</p>
+            <div class="row" style="gap: 2px;"><p style="font-size: 13px; margin-bottom:-3px">$@royaltyDollar &nbsp; </p> 2%  </div>
+        </div>
+         <div class="row-sb">
+           <p>Artist Royalty</p>
+            <div class="row" style="gap: 2px;"><p style="font-size: 13px; margin-bottom:-3px">$@feeDollar &nbsp; </p> @royaltyData?.Royalty% </div>
+
+        </div>
+        <div class="row-sb" style="margin-top: 3px;">
+           <p style="align-self: flex-start;">Price</p>
+           <div class="row" style="gap: 2px;"><p style="font-size: 13px; margin-bottom:-3px">$@priceDollarAssetText &nbsp; </p>@AssetListed.Price FTM  </div>
+        </div>
+    </div>
+   <span style="margin-bottom: -4px;"></span>
+       <div>
+            <p style="text-align: center; font-size:12px"> You are about to purchase <i> @NFT.Data?.name</i> <img height="13" src="media/whitelisted.svg" alt=""/> for <i>@AssetListed.Price FTM</i> </p>
+    </div>
+    @if (isTransactionRunning)
+    {
+        <button class="main-button main-btn-load row gap" disabled style="padding-right: 26px;">
+            <img height="26" src="media/loader.svg"> Proceed to payment
+        </button>
+    }
+    else
+    {
+        @if(balance < AssetListed.PriceInt)
+        {
+            <button class="main-button main-btn-load" disabled @onclick="FulfillOrder">Insufficient balance</button>
+        }
+        else
+        {
+            <button class="main-button" @onclick="FulfillOrder" >Proceed to payment</button>
+        }
+        
+    }
+</div> 
+
+<div class="modal-bg" @onclick="exitConfirm"></div>
+@if (success)
+{
+    <SuccessfulTrade NftTraded="NFT" TransactionHash="@hash" OnClose="succesfullBuy" />
+}
+@if (confirming)
+{
+    <Confirmation Display="confirming" Confirm="exitConfirm" Stay="exitStay" />
+}
+@code{
+    [Parameter]
+    public EventCallback<bool> OnClose { get; set; }
+    private bool IsOnCloseSet => OnClose.HasDelegate;
+
+    [Parameter]
+    public AssetListing AssetListed { get; set; }
+
+    [Parameter]
+    public Yokai NFT { get; set; }
+
+    //private PriceResponse fantomPrice;
+    //private string balance;
+    private BigInteger balance;
+    private string priceDollarAssetText;
+    private string priceBalance;
+    private string feeDollar;
+    private string royaltyDollar;
+    private double? priceDollarAsset;
+    private bool success;
+    private bool isTransactionRunning;
+    private string hash;
+    private bool confirming;
+    private RoyaltyData royaltyData;
+
+    private void confirmClose() 
+    {
+        if(!isTransactionRunning)
+            confirming = true;
+    }
+
+    private async Task exitStay() => confirming = false;
+    private async Task exitConfirm()
+    {
+        if (isTransactionRunning) return;
+        confirming = false;
+        success = false;
+        isTransactionRunning = false;
+        if(IsOnCloseSet)
+            await OnClose.InvokeAsync(false);
+    }
+
+    private async Task succesfullBuy()
+    {
+        confirming = false;
+        success = false;
+        isTransactionRunning = false;
+        if (IsOnCloseSet)
+            await OnClose.InvokeAsync(true);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (NFT.Data is null)
+        {
+            NFT.Data = new YokaiData
+                {
+                    name = await _httpClient.GetStringAsync($"Yokai/GetAssetName?pCollectionId={4}&pTokenId={NFT.TokenId}")
+                };
+        }
+        else if (string.IsNullOrWhiteSpace(NFT.Data.name))
+            NFT.Data.name = await _httpClient.GetStringAsync($"Yokai/GetAssetName?pCollectionId={4}&pTokenId={NFT.TokenId}");
+
+        royaltyData = await _httpClient.GetFromJsonAsync<RoyaltyData>($"Collection/GetRoyalty?collectionAddress={NFT.ContractAddress}");
+        if (royaltyData is null)
+            royaltyData = new RoyaltyData(0, "");
+
+        var hexPrice = await _jsRuntime.InvokeAsync<string>("RecoverLib.getBalance", _stateContainer.CurrentConnectedAddress);
+        var parsableHex = $"0{hexPrice.Substring(2)}";
+        var weiPrice = BigInteger.Parse(parsableHex, System.Globalization.NumberStyles.AllowHexSpecifier);
+        balance = weiPrice / 1000000000000000000;
+
+        var price = double.Parse(AssetListed.Price);
+        royaltyDollar = string.Format("{0:N2}", (priceDollarAsset ?? 0) * 0.02);
+        feeDollar = string.Format("{0:N2}", (price * (royaltyData.Royalty / 100d)) * _stateContainer.FantomPrice);
+        priceDollarAsset = price * _stateContainer.FantomPrice;
+        priceDollarAssetText = string.Format("{0:N2}", priceDollarAsset);
+        priceBalance = string.Format("{0:N2}", (double)balance * _stateContainer.FantomPrice);
+    }
+
+    public async Task FulfillOrder()
+    {
+        var reference = DotNetObjectReference.Create(this);
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.fulfillOrder", AssetListed.OrderJson, AssetListed.Signature, reference);
+    }
+
+    [JSInvokable]
+    public void WaitingTransaction()
+    {
+        isTransactionRunning = true;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task TransactionDone(bool isSuccess, string pHash, string pError = "")
+    {
+        isTransactionRunning = false;
+        if (isSuccess)
+        {
+            success = true;
+            hash = pHash;
+        }
+        else
+            _alertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+    }
+}

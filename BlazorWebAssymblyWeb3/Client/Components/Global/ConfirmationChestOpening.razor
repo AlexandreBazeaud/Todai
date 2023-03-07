@@ -1,0 +1,18 @@
+﻿<div style="@(Display ? "" : "display: none;")">
+    <div class="modal exit-confirm"  >
+        <div> Are you sure you want to open this chest (cannot be undone) ?</div>
+        <div class="row gap">
+            <button class="button-edit" @onclick="Cancel">Cancel</button> <button class="main-button" @onclick="Confirm">Yes</button>
+        </div>
+    </div>
+<div class="modal-bg dark-"></div>
+
+</div>
+
+@code {
+
+    [Parameter] public EventCallback Confirm { get; set; }
+    [Parameter] public EventCallback Cancel { get; set; }
+    [Parameter] public bool Display { get; set; }
+
+}

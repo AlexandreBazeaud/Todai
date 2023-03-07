@@ -1,0 +1,252 @@
+﻿@using BlazorWebAssymblyWeb3.Client.Data
+@using BlazorWebAssymblyWeb3.Server
+@using BlazorWebAssymblyWeb3.Shared
+@using Newtonsoft.Json
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@using BlazorWebAssymblyWeb3.Client.Services
+@inject IJSRuntime _jsRuntime;
+@inject NavigationManager _navManager;
+
+<div class="card-swap ">
+    <div>
+        <div class="row--" style="width: 160px;">
+            <a
+                href="@($"{_navManager.BaseUri}asset/{SwapOffer.OfferedNft.ContractAddress}/{SwapOffer.OfferedNft.TokenId}")"
+                target="_blank">
+                <img src="@(SwapOffer.OfferedNft.Data?.image ?? "media/nft_loading.svg")" alt="">
+            </a>
+            <img style="height: 20px; margin:5px;" src="media/swap_icon_w.svg" alt="">
+            <a
+                href="@($"{_navManager.BaseUri}asset/{SwapOffer.TargetedNft.ContractAddress}/{SwapOffer.TargetedNft.TokenId}")"
+                target="_blank">
+                <img src="@(SwapOffer.TargetedNft.Data?.image ?? "media/nft_loading.svg")" alt="">
+            </a>
+        </div>
+    </div>
+
+    <div class="row gap">
+        <div class="colmun" style="width:160px;">
+            <p>@SwapOffer.OfferedNft.Data?.name</p>
+            <a href="@($"{_navManager.BaseUri}profile/{SwapOffer.Offerer}")">
+                from
+                <i class="a-link" style="color:rgba(167, 35, 255, 0.85) ;">
+                    @(string.IsNullOrWhiteSpace(SwapOffer.OffererNickname) ? YokaiPatcher.ShortenAddress(SwapOffer.Offerer) : SwapOffer.OffererNickname)
+                </i>
+            </a>
+        </div>
+        <div class="column" style="width:160px;">
+            <p>@SwapOffer.TargetedNft.Data?.name</p>
+            <a href="@($"{_navManager.BaseUri}profile/{SwapOffer.TargetOwnerAddress}")">
+                to
+                <i class="a-link" style="color:white;">
+                    @(string.IsNullOrWhiteSpace(SwapOffer.TargetOwnerNickname) ? YokaiPatcher.ShortenAddress(SwapOffer.TargetOwnerAddress) : SwapOffer.TargetOwnerNickname)
+                </i>
+            </a>
+        </div>
+    </div>
+    <p class="row gap" style="width:130px;">
+        <img style="height: 14px;" src="media/timer_icon.svg" alt=""> @parsedTime
+    </p>
+    <button class="button-edit" @onclick="SeeOffer" style="width:110px;"> See Offer</button>
+    @if (confirming)
+    {
+        <div class="modal-bg" @onclick="showConfirm"></div>
+        <div class="modal see-offer market-orders column gap--">
+            <h2 class="row--">Offer</h2>
+            <div class="offer-items row gap">
+                <a
+                href="@($"{_navManager.BaseUri}asset/{SwapOffer.OfferedNft.ContractAddress}/{SwapOffer.OfferedNft.TokenId}")"
+                target="_blank">
+                    <img src="@(SwapOffer.OfferedNft.Data?.image ?? "media/nft_loading.svg")" alt="">
+                </a>
+                <img src="media/swap_icon.svg" style="height: 50px;" alt="">
+                <a
+                href="@($"{_navManager.BaseUri}asset/{SwapOffer.TargetedNft.ContractAddress}/{SwapOffer.TargetedNft.TokenId}")"
+                target="_blank">
+                    <img src="@(SwapOffer.TargetedNft.Data?.image ?? "media/nft_loading.svg")" alt="">
+                </a>
+            </div>
+            @if (IsTradable)
+            {
+                @if (!isApproved)
+                {
+                    <button class="button-edit @(isLoading ? "main-btn-load":"")" @onclick="ApproveContractForNft" style="width:110px;"><img height="26px" src="media/loader.svg" style="display: none;height: 26px;" alt=""> Approve</button>
+                }
+                else
+                {
+                    <div class="row gap--" style="margin-top: 8px;">
+                        <button class="button-edit @(isLoading ? "main-btn-load":"")" @onclick="Revoke" style="width:110px;"><img height="26px" src="media/loader.svg" style="display: none;height: 26px;" alt=""> Revoke</button>
+                        <button class="main-button auto @(isLoading ? "main-btn-load":"")" @onclick="AcceptOffer"><img height="26px" src="media/loader.svg" style="display: none;height: 26px;" alt=""> Accept Offer</button>
+                    </div>
+                }
+            }
+            else if (isCurrentUserOfferer)
+            {
+                <button class="main-button auto @(isLoading ? "main-btn-load":"")" @onclick="CancelOffer"><img height="26px" src="media/loader.svg" style="display: none;height: 26px;" alt=""> Cancel Offer</button>
+            }
+        </div>
+    }
+
+
+</div>
+@if (successfulTrade)
+{
+    <SuccessfulTrade NftTraded="@SwapOffer.TargetedNft" TransactionHash="@Hash" CurrentAddress="@CurrentAddress"/>
+    <div class="modal-bg" @onclick="CloseSuccessfulTrade"></div>
+}
+@if (confirmationDisplay)
+{
+    <Confirmation Display="confirmationDisplay" Confirm="ExitConfirm" Stay="ExitCancel"/>
+}
+
+@code {
+
+    [Parameter]
+    public SwapOffer SwapOffer { get; set; }
+
+    [Parameter]
+    public bool IsTradable { get; set; }
+
+    [Parameter]
+    public string? CurrentAddress { get; set; }
+
+    [Inject] 
+    public AlertMessageService AlertMessageService { get; set; }
+    
+    private bool isApproved;
+    private bool confirming;
+    private bool isLoading;
+    private string parsedTime;
+
+    private bool isCurrentUserOfferer;
+    private bool successfulTrade;
+    private string state;
+    private string Hash;
+    private TransactionStatue.ImageState imageState;
+    private bool confirmationDisplay = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isCurrentUserOfferer = CurrentAddress?.Equals(SwapOffer.Offerer, StringComparison.InvariantCultureIgnoreCase) ?? false;
+    //Should be tradable only inside an asset as the one looking is the one having the nft targeted for an offer
+        if (IsTradable)
+            isApproved = await _jsRuntime.InvokeAsync<bool>("RecoverLib.IsSwapContractApproved", SwapOffer.TargetCollection, SwapOffer.TargetTokenId);
+
+        SwapOffer.OfferedNft.Data ??= new YokaiData
+        {
+            image = $"https://todai.world/images/{SwapOffer.OfferedNft.ContractAddress.ToLower()}/{SwapOffer.OfferedNft.TokenId}"
+        };
+
+        SwapOffer.TargetedNft.Data ??= new YokaiData
+        {
+            image = $"https://todai.world/images/{SwapOffer.TargetedNft.ContractAddress.ToLower()}/{SwapOffer.TargetedNft.TokenId}"
+        };
+
+        if (SwapOffer.TimeUntilExpire.Days > 0)
+            parsedTime = $"{SwapOffer.TimeUntilExpire.Days} days left";
+        else if (SwapOffer.TimeUntilExpire.Hours > 0)
+            parsedTime = $"{SwapOffer.TimeUntilExpire.Hours} hours left";
+        else
+            parsedTime = "few minutes left";
+    }
+
+    private void ExitConfirm()
+    {
+        confirmationDisplay = false;
+        confirming = false;
+    }
+
+    private void ExitCancel() => confirmationDisplay = false;
+    private void showConfirm() => confirmationDisplay = true;
+    private void CloseSuccessfulTrade() => successfulTrade = false;
+    private void SeeOffer() => confirming = !confirming;
+
+    private DotNetObjectReference<SwapOfferCard>? _currentComponentReference;
+
+    private async Task ApproveContractForNft()
+    {
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        isLoading = true;
+        state = "Approving";
+        imageState = TransactionStatue.Loading;
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.ApproveSwapContractForTokenID", SwapOffer.TargetCollection, SwapOffer.TargetTokenId, _currentComponentReference);
+    }
+
+    [JSInvokable]
+    public async Task ApproveResult(bool pIsSuccess, string pError = "")
+    {
+        if (pIsSuccess)
+            isApproved = !isApproved;
+
+        isLoading = false;
+        if (!pIsSuccess)
+            AlertMessageService.ShowAlertMessage(AlertMessageService.States.Error, pError);
+    }
+
+    [JSInvokable]
+    public async Task AcceptOfferResult(bool pIsSuccess, string pHash)
+    {
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        successfulTrade = true;
+        isLoading = false;
+        confirming = false;
+        Hash = pHash;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task CancelOfferResult()
+    {
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        state = "Offer canceled!";
+        imageState = TransactionStatue.Done;
+        StateHasChanged();
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.HideTransactionState", _currentComponentReference, true);
+    }
+
+    [JSInvokable]
+    public void Hide(bool pShouldReload)
+    {
+        isLoading = false;
+        successfulTrade = false;
+        _navManager.NavigateTo(_navManager.Uri, true);
+    }
+
+    private async Task AcceptOffer()
+    {
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        state = "Accepting offer";
+        imageState = TransactionStatue.Loading;
+        isLoading = true;
+
+        await _jsRuntime.InvokeAsync<string>("RecoverLib.AcceptOffer", SwapOffer.Offerer, SwapOffer.TargetCollection, SwapOffer.OfferCollection, SwapOffer.TargetTokenId, SwapOffer.OfferTokenId, SwapOffer.EndTimestamp, _currentComponentReference);
+    }
+
+    private async Task CancelOffer()
+    {
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        state = "Canceling offer";
+        imageState = TransactionStatue.Loading;
+        isLoading = true;
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.CancelOffer", SwapOffer.Offerer, SwapOffer.TargetCollection, SwapOffer.OfferCollection, SwapOffer.TargetTokenId, SwapOffer.OfferTokenId, SwapOffer.EndTimestamp, _currentComponentReference);
+    }
+
+    private async Task Revoke()
+    {
+        _currentComponentReference = DotNetObjectReference.Create(this);
+        state = "Revoking approval";
+        imageState = TransactionStatue.Loading;
+        isLoading = true;
+        await _jsRuntime.InvokeVoidAsync("RecoverLib.RevokeSwapContractForTokenID", SwapOffer.TargetCollection, SwapOffer.TargetTokenId, _currentComponentReference);
+    }
+
+    [JSInvokable]
+    public void WaitingTransaction(string pEventName)
+    {
+        Console.WriteLine(pEventName);
+        if (pEventName.Equals("Cancel") || pEventName.Equals("Create"))
+            return;
+
+        StateHasChanged();
+    }
+}

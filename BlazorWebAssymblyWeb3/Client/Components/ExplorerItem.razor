@@ -1,0 +1,105 @@
+﻿@using BlazorWebAssymblyWeb3.Shared
+@using BlazorWebAssymblyWeb3.Shared.Forms
+
+
+<a href="@Item.Url">
+    <div class="search-card-container themed-box">
+        <div class="search-card-bg">
+            <img src="@(string.IsNullOrWhiteSpace(Item.BannerUrl) ? "media/profile_default_bg.png" : Item.BannerUrl)"
+                alt="">
+        </div>
+        <div class="search-card">
+            <div class="search-card-pp">
+                <img class="search-card-pp" height="100"
+                    src="@(string.IsNullOrWhiteSpace(Item.ProfilePicture) ? "/media/default_pp.png" : Item.ProfilePicture)"
+                    alt="">
+
+            </div>
+            <div class="row-- gap" style="margin-top:16px;">
+                <div class="search-card-name">
+                    @Item.Name
+                </div>
+                @if (Item.IsCollection)
+                {
+                    @if (Item.IsWhitelisted ?? false)
+                    {
+                        <a class="tooltip-c security-badge cursor"
+                    href="https://torimoontori.gitbook.io/todai/nft-platform/collections" target="_blank"
+                    style="margin-top:9px ;">
+                            <img height="18px" src="media/whitelisted.svg" alt="">
+                            <div class="tooltip-r "> Sealed </div>
+                        </a>
+                    }
+                    else if (Item.IsVerified ?? false)
+                    {
+                        <a class="security-badge tooltip-c cursor"
+                    href="https://torimoontori.gitbook.io/todai/nft-platform/collections" target="_blank"
+                    style="margin-top:9px ;">
+                            <img height="18px" src="media/verified.svg" alt="">
+                            <div class="tooltip-r "> Verified </div>
+                        </a>
+                    }
+                }
+            </div>
+            <div class="search-card-content">
+
+                @if (Item.IsCollection)
+                {
+                    <div class="emblem row--">
+                        @* <img src="media/live_icon.svg" alt=""> *@
+                        @* <img src="media/gem_icon.svg" alt="gem"> *@
+                        @* <img src="media/trending_icon.svg" alt="trending"> *@
+                        <div class="network row-- gap">
+                            <img class="ftm-icon icon" src="/media/fantom_icon_bold.svg" alt="fantom" />
+                            Fantom
+                        </div>
+                    </div>
+                }
+                <div class="search-card-description">
+                      @if (Item.IsCollection)
+                {
+                    <div class="profile-stats">
+                        <div class="tooltip-c column-center cd">
+                            <h3>8753 </h3> <span style="font-size: 12px;">Supply</span>
+                            <div class="tooltip" style="width: 120px;">
+                                Asset quantity in collection
+                            </div>
+                        </div>
+                    </div>
+                }
+                    @if (Item.Description?.Length > 115)
+                    {
+                        @($"{Item.Description.Substring(0, 115)}...")
+                        ;
+                    }
+                    else
+                    {
+                        @Item.Description
+                    }
+                </div>
+                @* @if (Item.IsWhitelisted ?? false)
+                    {
+                    <div class="yokai-likes row--">
+                    0<img height="28px" src="media/yokai_like.svg" alt="">
+                    </div>
+                    <div class="project-date">31 Oct. 2021 </div>
+                    } *@
+            </div>
+        </div>
+    </div>
+</a>
+
+@code {
+
+    [Parameter]
+    public ExplorerItemValue Item { get; set; }
+
+    // [Parameter]
+    // public Collection Collection { get; set; }
+    //
+    // [Parameter]
+    // public Profile Profile { get; set; }
+
+
+
+}

@@ -1,0 +1,137 @@
+@using BlazorWebAssymblyWeb3.Client.Services
+@using BlazorWebAssymblyWeb3.Server
+@using BlazorWebAssymblyWeb3.Shared.Forms
+@using BlazorWebAssymblyWeb3.Client.Components.Global
+@inject HttpClient _http;
+@inject Helper _helper;
+
+
+<style>
+    .reward-item {
+        width: 220px;
+    }
+</style>
+@if (Chest != null)
+{
+    <div class="reward-item team-card column gap">
+        <img height="150px" src="media/@(Chest.RewardRarityNavigation.Name).png" alt="">
+        <div>@Chest.RewardRarityNavigation.Name Chest #@Chest.Id</div>
+        <div class="row gap--">
+            @if (!Chest.Opened && OpenedChest is null)
+            {
+                <button class="button-edit" @onclick="seeConfirm" style="width: 160px;">Open</button>
+            }
+            else 
+            {
+                <button class="button-edit" @onclick="seeEarned" style="width: 160px;">See</button>
+            }
+        </div>
+    </div>
+
+    @if (earned)
+    {
+
+        <div class="modal" style="background: transparent; box-shadow:none; ">
+            @if (OpenedChest != null)
+            {
+                <div class="chest-content team-card column" style="transform: scale(1.1);">
+                    @if (OpenedChest.RewardType == 1)
+                    {
+                        <img style="margin-bottom: 10px;" height="80" src="media/ftm.svg" alt="">
+                        <div> Fantom Token</div>
+                        <p> @OpenedChest.Value FTM</p>
+                    }
+                    else if (OpenedChest.RewardType == 2)
+                    {
+                        <img style="margin-bottom: 10px;" height="80" src="media/tori.jpg" alt="">
+                        <div> Yokai NFTs </div>
+                        <p> 6%</p>
+                    }
+                    else if (OpenedChest.RewardType == 3)
+                    {
+                        <img style="margin-bottom: 10px;" height="80" src="media/xp.svg" alt="">
+                        <div>Experiences</div>
+                        <p>@Math.Round(OpenedChest.Value) xp</p>
+                    }
+                    else if (OpenedChest.RewardType == 4)
+                    {
+                        <img style="margin-bottom: 10px;" height="80" src="media/cloud_1.png" alt="">
+                        <div> Cosmetics</div>
+                        <p> Profile Items</p>
+                    }
+                </div>
+            }
+            else
+            {
+                <img src="/media/todai_loading.svg" alt="loading" />
+            }
+        </div>
+
+        <div class="modal-bg" @onclick="closeEarned"></div>
+
+    }
+}
+@if (confirm)
+{
+    <ConfirmationChestOpening Confirm="validConfirm" Cancel="cancelConfirm" Display="confirm" />
+}
+@code {
+    private bool content = false;
+    private bool earned = false;
+    private bool confirm = false;
+
+    private void seeEarned()
+    {
+        if (Chest.Opened)
+            OpenedChest = Chest;
+        earned = true;
+    }
+    private void closeEarned() => earned = false;
+    private void seeContent() => content = true;
+    private void closeContent() => content = false;
+
+    private void seeConfirm()
+    {
+        if (Chest.Opened)
+            earned = true;
+        else
+            confirm = true;
+    }
+    private void cancelConfirm() => confirm = false;
+    private async Task validConfirm()
+    {
+        confirm = false;
+        earned = true;
+        await OpenChest();
+        
+    }
+
+    [Parameter]
+    public RewardValue Chest { get; set; }
+
+    private RewardValue OpenedChest { get; set; }
+
+    private async Task OpenChest()
+    {
+        var guid = await _http.GetStringAsync($"Yokai/GetGuidSignFor?pAddress={Chest.EarnerAddress.ToLower()}");
+        var transaction = await _helper.CreateSignTransactionAndPayload(new Message
+            {
+                contents = guid
+            });
+        if (!transaction.IsSuccess) return;
+        //sign
+        var openedChestResult = await _http.PostAsJsonAsync("Marketplace/OpenChestFor", new ChestToOpenData
+            {
+                Id = Chest.Id,
+                Signature = transaction.Hash,
+                Address = Chest.EarnerAddress
+            });
+
+        if (openedChestResult.IsSuccessStatusCode)
+        {
+            Chest = OpenedChest = await openedChestResult.Content.ReadFromJsonAsync<RewardValue>();
+            Chest.Opened = true;
+        }
+    }
+
+}
